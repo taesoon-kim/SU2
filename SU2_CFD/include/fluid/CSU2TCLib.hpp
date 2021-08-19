@@ -73,7 +73,7 @@ private:
   Omega11;                       /*!< \brief Collision integrals (Omega(1,1)) */
 
   /*--- Implicit variables ---*/
-  su2double                      /*!< \brief Derivatives w.r.t. conservative variables */
+  su2double                     /*!< \brief Derivatives w.r.t. conservative variables */
   *dPdU, *dTdU, *dTvedU;
 
   su2double fwdRxn, bkwRxn,
