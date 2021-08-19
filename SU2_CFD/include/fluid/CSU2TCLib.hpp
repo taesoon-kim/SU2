@@ -72,6 +72,25 @@ private:
   C3DDoubleMatrix Omega00,       /*!< \brief Collision integrals (Omega(0,0)) */
   Omega11;                       /*!< \brief Collision integrals (Omega(1,1)) */
 
+  /*--- Implicit variables ---*/
+  su2double                      /*!< \brief Derivatives w.r.t. conservative variables */
+  *dPdU, *dTdU, *dTvedU;
+
+  su2double fwdRxn, bkwRxn,
+	kf,kfb,kb,
+	coeff, eta, epsilon, T_min,
+	Trxnf, Trxnb,
+	Thf, Thb, dThf, dThb,
+	theta, af, bf, ab, bb;
+
+  vector<su2double>
+  dkf, dkb,
+  dRfok, dRbok,
+	eve, eve_eq, cvve, cvve_eq;
+
+  vector<int>
+  alphak, betak;
+
 public:
 
   /*!
@@ -120,7 +139,9 @@ public:
   /*!
    * \brief Compute species net production rates.
    */
-  vector<su2double>& ComputeNetProductionRates() final;
+  vector<su2double>& ComputeNetProductionRates(bool implicit, const su2double *V, su2double* eve,
+                                               su2double* cvve, su2double* dTdU, su2double* dTvedU,
+                                               su2double **val_jacobian) final;
 
   /*!
    * \brief Compute vibrational energy source term.

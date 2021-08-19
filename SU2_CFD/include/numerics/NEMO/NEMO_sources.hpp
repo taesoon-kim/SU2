@@ -45,8 +45,8 @@ private:
   su2double *dkf, *dkb, *dRfok, *dRbok;
   vector<su2double> Cvvsst, ws;
 
-  su2double* residual = nullptr;        /*!< \brief The source residual. */
-
+  su2double* residual = nullptr;  /*!< \brief The source residual. */
+  su2double** jacobian = nullptr; /*!< \brief The source Jacobian. */  
 public:
 
   /*!

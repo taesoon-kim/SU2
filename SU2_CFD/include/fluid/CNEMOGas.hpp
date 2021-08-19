@@ -126,7 +126,9 @@ public:
   /*!
    * \brief Compute species net production rates.
    */
-  virtual vector<su2double>& ComputeNetProductionRates() = 0;
+  virtual vector<su2double>& ComputeNetProductionRates(bool implicit, const su2double *V, su2double* eve,
+                                               su2double* cvve, su2double* dTdU, su2double* dTvedU,
+                                               su2double **val_jacobian) = 0;
 
   /*!
    * \brief Compute vibrational energy source term.

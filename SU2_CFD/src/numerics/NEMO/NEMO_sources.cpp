@@ -54,6 +54,9 @@ CSource_NEMO::CSource_NEMO(unsigned short val_nDim,
   }
 
   residual = new su2double[nVar];
+  jacobian = new su2double* [nVar];
+  for(unsigned short iVar = 0; iVar < nVar; ++iVar)
+    jacobian[iVar] = new su2double [nVar]();
 }
 
 CSource_NEMO::~CSource_NEMO(void) {
@@ -74,7 +77,11 @@ CSource_NEMO::~CSource_NEMO(void) {
   delete [] dRbok;
 
   delete [] residual;
-
+  if(jacobian) {
+    for(unsigned short iVar = 0; iVar < nVar; ++iVar)
+      delete [] jacobian[iVar];
+    delete [] jacobian;
+  }
 }
 
 CNumerics::ResidualType<> CSource_NEMO::ComputeChemistry(const CConfig *config) {
@@ -100,7 +107,8 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeChemistry(const CConfig *config) 
   /*--- Set mixture state ---*/
   fluidmodel->SetTDStateRhosTTv(rhos, T, Tve);
 
-  ws = fluidmodel->ComputeNetProductionRates();
+  ws = fluidmodel->ComputeNetProductionRates(implicit, V_i, eve_i, Cvve_i, dTdU_i, dTvedU_i,
+                                             jacobian);
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     residual[iSpecies] = ws[iSpecies] *Volume;

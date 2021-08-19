@@ -785,11 +785,20 @@ vector<su2double>& CSU2TCLib::ComputeSpeciesEve(su2double val_T, bool vibe_only)
   return eves;
 }
 
-vector<su2double>& CSU2TCLib::ComputeNetProductionRates(){
+vector<su2double>& CSU2TCLib::ComputeNetProductionRates(bool implicit, const su2double *V, su2double* eve,
+                                                        su2double* cvve, su2double* dTdU, su2double* dTvedU,
+							su2double **val_jacobian){
 
+  /*---                          ---*/
   /*--- Nonequilibrium chemistry ---*/
+  /*---                          ---*/
+
+  /*--- Initialize variables ---*/
   unsigned short ii, iReaction;
-  su2double Thf, Thb, Trxnf, Trxnb, Keq, kf, kb, kfb, fwdRxn, bkwRxn, af, bf, ab, bb;
+  su2double Keq;
+  ws.resize(nSpecies,0.0);
+  for (iSpecies = 0; iSpecies < nSpecies; iSpecies ++)
+    ws[iSpecies] = 0.0; 
 
   /*--- Define artificial chemistry parameters ---*/
   // Note: These parameters artificially increase the rate-controlling reaction
@@ -797,12 +806,11 @@ vector<su2double>& CSU2TCLib::ComputeNetProductionRates(){
   //       source term.
   su2double T_min   = 800.0;
   su2double epsilon = 80;
+
   /*--- Define preferential dissociation coefficient ---*/
-  //alpha = 0.3;
+  //alpha = 0.3; TODO Make a config option?
 
-  for( iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-    ws[iSpecies] = 0.0;
-
+  /*--- Loop over reactions ---*/
   for (iReaction = 0; iReaction < nReactions; iReaction++) {
 
     /*--- Determine the rate-controlling temperature ---*/
@@ -861,7 +869,7 @@ vector<su2double>& CSU2TCLib::ComputeNetProductionRates(){
       if (iSpecies != nSpecies)
         ws[iSpecies] -= MolarMass[iSpecies] * (fwdRxn-bkwRxn);
     }
-  }
+  } //iReaction
   return ws;
 }
 
@@ -916,7 +924,9 @@ void CSU2TCLib::ComputeKeqConstants(unsigned short val_Reaction) {
 
 su2double CSU2TCLib::ComputeEveSourceTerm(){
 
+  /*---                                                                    ---*/
   /*--- Trans.-rot. & vibrational energy exchange via inelastic collisions ---*/
+  /*---                                                                    ---*/
   // Note: Electronic energy not implemented
   // Note: Landau-Teller formulation
   // Note: Millikan & White relaxation time (requires P in Atm.)
@@ -944,6 +954,7 @@ su2double CSU2TCLib::ComputeEveSourceTerm(){
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     MolarFrac[iSpecies] = (rhos[iSpecies] / MolarMass[iSpecies]) / conc;
 
+  /*--- Compute Eve and Eve* ---*/
   eve_eq = ComputeSpeciesEve(T, true);
   eve    = ComputeSpeciesEve(Tve, true);
 
