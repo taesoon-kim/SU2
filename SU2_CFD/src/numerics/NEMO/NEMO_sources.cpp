@@ -37,26 +37,21 @@ CSource_NEMO::CSource_NEMO(unsigned short val_nDim,
 
   unsigned short iSpecies;
 
-  /*--- Allocate arrays ---*/
-  alphak = new int[nSpecies];
-  betak  = new int[nSpecies];
-  Y      = new su2double[nSpecies];
-  dkf    = new su2double[nVar];
-  dkb    = new su2double[nVar];
-  dRfok  = new su2double[nVar];
-  dRbok  = new su2double[nVar];
-
   ws.resize(nSpecies,0.0);
 
+  /*--- Allocate arrays ---*/
+  Y      = new su2double[nSpecies];
+  
   dYdr = new su2double*[nSpecies];
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     dYdr[iSpecies] = new su2double[nSpecies];
   }
 
-  residual = new su2double[nVar];
+  residual = new su2double[nVar]();
   jacobian = new su2double* [nVar];
   for(unsigned short iVar = 0; iVar < nVar; ++iVar)
     jacobian[iVar] = new su2double [nVar]();
+
 }
 
 CSource_NEMO::~CSource_NEMO(void) {
@@ -67,17 +62,10 @@ CSource_NEMO::~CSource_NEMO(void) {
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     delete [] dYdr[iSpecies];
   delete [] dYdr;
-
   delete [] Y;
-  delete [] alphak;
-  delete [] betak;
-  delete [] dkf;
-  delete [] dkb;
-  delete [] dRfok;
-  delete [] dRbok;
 
   delete [] residual;
-  if(jacobian) {
+  if (jacobian) {
     for(unsigned short iVar = 0; iVar < nVar; ++iVar)
       delete [] jacobian[iVar];
     delete [] jacobian;
@@ -88,6 +76,7 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeChemistry(const CConfig *config) 
 
   /*--- Nonequilibrium chemistry ---*/
   unsigned short iSpecies, iVar;
+  unsigned short jSpecies, jVar;
   su2double T, Tve;
   vector<su2double> rhos;
 
@@ -97,6 +86,10 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeChemistry(const CConfig *config) 
   for (iVar = 0; iVar < nVar; iVar++) {
     residual[iVar] = 0.0;
   }
+  if (implicit)
+    for (iVar = 0; iVar < nVar; iVar++)
+      for (jVar = 0; jVar < nVar; jVar++)
+        jacobian[iVar][jVar] = 0.0;
 
   /*--- Rename for convenience ---*/
   T   = V_i[T_INDEX];
@@ -107,137 +100,22 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeChemistry(const CConfig *config) 
   /*--- Set mixture state ---*/
   fluidmodel->SetTDStateRhosTTv(rhos, T, Tve);
 
-  ws = fluidmodel->ComputeNetProductionRates(implicit, V_i, eve_i, Cvve_i, dTdU_i, dTvedU_i,
-                                             jacobian);
+  /*---Compute Prodcution/destruction terms ---*/
+  ws = fluidmodel->ComputeNetProductionRates(implicit, V_i, eve_i, Cvve_i,
+                                             dTdU_i, dTvedU_i, jacobian);
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     residual[iSpecies] = ws[iSpecies] *Volume;
 
-  //if (implicit) {
-  //  for (iVar = 0; iVar < nVar; iVar++)
-  //    for (jVar = 0; jVar < nVar; jVar++)
-  //      val_Jacobian_i[iVar][jVar] = 0.0;
-  //}
-//  if (implicit) {
-//    su2double dThf, dThb;
-//
-//      /*--- Initializing derivative variables ---*/
-//      for (iVar = 0; iVar < nVar; iVar++) {
-//        dkf[iVar] = 0.0;
-//        dkb[iVar] = 0.0;
-//        dRfok[iVar] = 0.0;
-//        dRbok[iVar] = 0.0;
-//      }
-//      for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-//        alphak[iSpecies] = 0;
-//        betak[iSpecies]  = 0;
-//      }
-//
-//      /*--- Derivative of modified temperature wrt Trxnf ---*/
-//      dThf = 0.5 * (1.0 + (Trxnf-T_min)/sqrt((Trxnf-T_min)*(Trxnf-T_min)
-//                                             + epsilon*epsilon          ));
-//      dThb = 0.5 * (1.0 + (Trxnb-T_min)/sqrt((Trxnb-T_min)*(Trxnb-T_min)
-//                                             + epsilon*epsilon          ));
-//
-//      /*--- Fwd rate coefficient derivatives ---*/
-//      coeff = kf * (eta/Thf+theta/(Thf*Thf)) * dThf;
-//      for (iVar = 0; iVar < nVar; iVar++) {
-//        dkf[iVar] = coeff * (  af*Trxnf/T*dTdU_i[iVar]
-//                               + bf*Trxnf/Tve*dTvedU_i[iVar] );
-//      }
-//
-//      /*--- Bkwd rate coefficient derivatives ---*/
-//      coeff = kb * (eta/Thb+theta/(Thb*Thb)) * dThb;
-//      for (iVar = 0; iVar < nVar; iVar++) {
-//        dkb[iVar] = coeff*(  ab*Trxnb/T*dTdU_i[iVar]
-//                             + bb*Trxnb/Tve*dTvedU_i[iVar])
-//            - kb*((A[0]*Thb/1E4 - A[2] - A[3]*1E4/Thb
-//            - 2*A[4]*(1E4/Thb)*(1E4/Thb))/Thb) * dThb * (  ab*Trxnb/T*dTdU_i[iVar]
-//                                                           + bb*Trxnb/Tve*dTvedU_i[iVar]);
-//      }
-//
-//      /*--- Rxn rate derivatives ---*/
-//      for (ii = 0; ii < 3; ii++) {
-//
-//        /*--- Products ---*/
-//        iSpecies = RxnMap(iReaction,1,ii);
-//        if (iSpecies != nSpecies)
-//          betak[iSpecies]++;
-//
-//        /*--- Reactants ---*/
-//        iSpecies = RxnMap(iReaction,0,ii);
-//        if (iSpecies != nSpecies)
-//          alphak[iSpecies]++;
-//      }
-//
-//      for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-//
-//        // Fwd
-//        dRfok[iSpecies] =  0.001*alphak[iSpecies]/Ms[iSpecies]
-//            * pow(0.001*U_i[iSpecies]/Ms[iSpecies],
-//                  max(0, alphak[iSpecies]-1)      );
-//        for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
-//          if (jSpecies != iSpecies)
-//            dRfok[iSpecies] *= pow(0.001*U_i[jSpecies]/Ms[jSpecies],
-//                                   alphak[jSpecies]                );
-//        dRfok[iSpecies] *= 1000.0;
-//
-//        // Bkw
-//        dRbok[iSpecies] =  0.001*betak[iSpecies]/Ms[iSpecies]
-//            * pow(0.001*U_i[iSpecies]/Ms[iSpecies],
-//                  max(0, betak[iSpecies]-1)       );
-//        for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
-//          if (jSpecies != iSpecies)
-//            dRbok[iSpecies] *= pow(0.001*U_i[jSpecies]/Ms[jSpecies],
-//                                   betak[jSpecies]                 );
-//        dRbok[iSpecies] *= 1000.0;
-//      }
-//
-//      nEve = nSpecies+nDim+1;
-//      for (ii = 0; ii < 3; ii++) {
-//
-//        /*--- Products ---*/
-//        iSpecies = RxnMap(iReaction,1,ii);
-//        if (iSpecies != nSpecies) {
-//          for (iVar = 0; iVar < nVar; iVar++) {
-//            val_Jacobian_i[iSpecies][iVar] +=
-//                Ms[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar]
-//                                 -dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]) * Volume;
-//            val_Jacobian_i[nEve][iVar] +=
-//                Ms[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar]
-//                                 -dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar])
-//                * eve_i[iSpecies] * Volume;
-//          }
-//
-//          for (jVar = 0; jVar < nVar; jVar++) {
-//            val_Jacobian_i[nEve][jVar] += Ms[iSpecies] * (fwdRxn-bkwRxn)
-//                * Cvve_i[iSpecies] * dTvedU_i[jVar] * Volume;
-//          }
-//        }
-//
-//        /*--- Reactants ---*/
-//        iSpecies = RxnMap(iReaction,0,ii);
-//        if (iSpecies != nSpecies) {
-//          for (iVar = 0; iVar < nVar; iVar++) {
-//            val_Jacobian_i[iSpecies][iVar] -=
-//                Ms[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar]
-//                                 -dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]) * Volume;
-//            val_Jacobian_i[nEve][iVar] -=
-//                Ms[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar]
-//                                 -dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar])
-//                * eve_i[iSpecies] * Volume;
-//
-//          }
-//
-//          for (jVar = 0; jVar < nVar; jVar++) {
-//            val_Jacobian_i[nEve][jVar] -= Ms[iSpecies] * (fwdRxn-bkwRxn)
-//                * Cvve_i[iSpecies] * dTvedU_i[jVar] * Volume;
-//          }
-//        } // != nSpecies
-//      } // ii
-//    } // implicit
+    if (implicit) {
+      for (iVar = 0; iVar<nVar; iVar++) {
+        for (jVar = 0; jVar<nVar; jVar++) {
+        jacobian[iVar][jVar] = jacobian[iVar][jVar] * Volume;
+        }
+      }
+    }
 
-  return ResidualType<>(residual, nullptr, nullptr);
+  return ResidualType<>(residual, jacobian, nullptr);
 
 }
 
@@ -249,7 +127,9 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeVibRelaxation(const CConfig *conf
   // Note: Millikan & White relaxation time (requires P in Atm.)
   // Note: Park limiting cross section
   unsigned short iSpecies, iVar;
-  su2double  T, Tve;
+  unsigned short jSpecies, jVar;
+  su2double T, Tve;
+  su2double VTterm;
   su2double res_min = -1E6;
   su2double res_max = 1E6;
   vector<su2double> rhos;
@@ -260,45 +140,45 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeVibRelaxation(const CConfig *conf
   for (iVar = 0; iVar < nVar; iVar++) {
     residual[iVar] = 0.0;
   }
+  if (implicit) {
+    for (iVar = 0; iVar < nVar; iVar++)
+      for (jVar = 0; jVar < nVar; jVar++)
+        jacobian[iVar][jVar] = 0.0;
+  }
 
   /*--- Rename for convenience ---*/
-  T       = V_i[T_INDEX];
-  Tve     = V_i[TVE_INDEX];
+  T   = V_i[T_INDEX];
+  Tve = V_i[TVE_INDEX];
   for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     rhos[iSpecies]=V_i[RHOS_INDEX+iSpecies];
 
+  /*--- Set fluid state ---*/
   fluidmodel->SetTDStateRhosTTv(rhos, T, Tve);
 
-  residual[nSpecies+nDim+1] = fluidmodel->ComputeEveSourceTerm() * Volume;
+  /*--- Compute residual and jacobians ---*/
+  VTterm = fluidmodel -> ComputeEveSourceTerm();
+    if (implicit) {
+        fluidmodel->GetEveSourceTermJacobian(V_i, eve_i, Cvve_i, dTdU_i,
+                                         dTvedU_i, jacobian);
+    }
+    
+  residual[nSpecies+nDim+1] = VTterm * Volume;
+  
+    if (implicit) {
+      for (iVar = 0; iVar<nVar; iVar++) {
+        for (jVar = 0; jVar<nVar; jVar++) {
+        jacobian[iVar][jVar] = jacobian[iVar][jVar] * Volume;
+        }
+      }
+    }
 
-  //  if (implicit) {
-//    for (iVar = 0; iVar < nVar; iVar++)
-//      for (jVar = 0; jVar < nVar; jVar++)
-//        val_Jacobian_i[iVar][jVar] = 0.0;
-//  }
-
-//  if (implicit) {
-//
-//    fluidmodel->SetTve(T);
-//    Cvvsst = fluidmodel->ComputeSpeciesCvVibEle();
-//
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-//
-//      for (iVar = 0; iVar < nVar; iVar++) {
-//        val_Jacobian_i[nSpecies+nDim+1][iVar] += rhos[iSpecies]/taus[iSpecies]*(Cvvsst[iSpecies]*dTdU_i[iVar] -
-//                                                          Cvve_i[iSpecies]*dTvedU_i[iVar])*Volume;
-//      }
-//    }
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      val_Jacobian_i[nSpecies+nDim+1][iSpecies] += (estar[iSpecies]-eve_i[iSpecies])/taus[iSpecies]*Volume;
-//  }
-
+  /*--- Relax/limit vt transfer ---*/
   if(config->GetVTTransferResidualLimiting()){
     if(residual[nSpecies+nDim+1]>res_max) residual[nSpecies+nDim+1]=res_max;
     if(residual[nSpecies+nDim+1]<res_min) residual[nSpecies+nDim+1]=res_min;
   }
 
-  return ResidualType<>(residual, nullptr, nullptr);
+  return ResidualType<>(residual, jacobian, nullptr);
 }
 
 CNumerics::ResidualType<> CSource_NEMO::ComputeAxisymmetric(const CConfig *config) {
