@@ -215,8 +215,10 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeAxisymmetric(const CConfig *confi
 
   /*--- Rename for convenience ---*/
   rho    = V_i[RHO_INDEX];
+  rhou   = U_i[nSpecies];
   rhov   = U_i[nSpecies+1];
   H      = V_i[H_INDEX];
+  rhoEve = U_i[nVar-1];
   vel2   = 0.0;
 
   for (iDim = 0; iDim < nDim; iDim++)
@@ -230,6 +232,64 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeAxisymmetric(const CConfig *confi
   residual[nSpecies+1] = yinv*rhov*U_i[nSpecies+1]/rho*Volume;
   residual[nSpecies+2] = yinv*rhov*H*Volume;
   residual[nSpecies+3] = yinv*rhov*U_i[nSpecies+nDim+1]/rho*Volume;
+
+  if (implicit) {
+
+    /*--- Initialize ---*/
+    for (iVar = 0; iVar < nVar; iVar++)
+      for (jVar = 0; jVar < nVar; jVar++)
+        jacobian[iVar][jVar] = 0.0;
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
+        dYdr[iSpecies][jSpecies] = 0.0;
+
+    /*--- Calculate additional quantities ---*/
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++) {
+        dYdr[iSpecies][jSpecies] += -1/rho*Y[iSpecies];
+      }
+      dYdr[iSpecies][iSpecies] += 1/rho;
+    }
+
+    /*--- Populate Jacobian ---*/
+
+    // Species density
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++) {
+        jacobian[iSpecies][jSpecies] = dYdr[iSpecies][jSpecies]*rhov;
+      }
+      jacobian[iSpecies][nSpecies+1] = Y[iSpecies];
+    }
+
+    // X-momentum
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+      jacobian[nSpecies][iSpecies] = -rhou*rhov/(rho*rho);
+    jacobian[nSpecies][nSpecies]   = rhov/rho;
+    jacobian[nSpecies][nSpecies+1] = rhou/rho;
+
+    // Y-momentum
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+     jacobian[nSpecies+1][iSpecies] = -rhov*rhov/(rho*rho);
+    jacobian[nSpecies+1][nSpecies+1] = 2*rhov/rho;
+
+    // Energy
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+      jacobian[nSpecies+nDim][iSpecies]      = -H*rhov/rho + dPdU_i[iSpecies]*rhov/rho;
+    jacobian[nSpecies+nDim][nSpecies]        = dPdU_i[nSpecies]*rhov/rho;
+    jacobian[nSpecies+nDim][nSpecies+1]      = H + dPdU_i[nSpecies+1]*rhov/rho;
+    jacobian[nSpecies+nDim][nSpecies+nDim]   = (1+dPdU_i[nSpecies+nDim])*rhov/rho;
+    jacobian[nSpecies+nDim][nSpecies+nDim+1] = dPdU_i[nSpecies+nDim+1]*rhov/rho;
+
+    // Vib-el energy
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+      jacobian[nSpecies+nDim+1][iSpecies] = -rhoEve*rhov/(rho*rho);
+    jacobian[nSpecies+nDim+1][nSpecies+1] = rhoEve/rho;
+    jacobian[nSpecies+nDim+1][nSpecies+nDim+1] = rhov/rho;
+
+    for (iVar = 0; iVar < nVar; iVar++)
+      for (jVar = 0; jVar < nVar; jVar++)
+        jacobian[iVar][jVar] *= yinv*Volume;
+  }
 
   if (viscous) {
     if (!rans){ turb_ke_i = 0.0; }
@@ -271,64 +331,6 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeAxisymmetric(const CConfig *confi
                                                                         -TWO3*(AuxVar_Grad_i[1][1]+AuxVar_Grad_i[2][0]));
     residual[nSpecies+3] -= Volume*(yinv*(-sumJeve_y -qy_ve));
   }
-
-//  if (implicit) {
-//
-//    /*--- Initialize ---*/
-//    for (iVar = 0; iVar < nVar; iVar++)
-//      for (jVar = 0; jVar < nVar; jVar++)
-//        val_Jacobian[iVar][jVar] = 0.0;
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
-//        dYdr[iSpecies][jSpecies] = 0.0;
-//
-//    /*--- Calculate additional quantities ---*/
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-//      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++) {
-//        dYdr[iSpecies][jSpecies] += -1/rho*Ys[iSpecies];
-//      }
-//      dYdr[iSpecies][iSpecies] += 1/rho;
-//    }
-//
-//    /*--- Populate Jacobian ---*/
-//
-//    // Species density
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-//      for (jSpecies = 0; jSpecies < nSpecies; jSpecies++) {
-//        val_Jacobian[iSpecies][jSpecies] = dYdr[iSpecies][jSpecies]*rhov;
-//      }
-//      val_Jacobian[iSpecies][nSpecies+1] = Y[iSpecies];
-//    }
-//
-//    // X-momentum
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      val_Jacobian[nSpecies][iSpecies] = -rhou*rhov/(rho*rho);
-//    val_Jacobian[nSpecies][nSpecies] = rhov/rho;
-//    val_Jacobian[nSpecies][nSpecies+1] = rhou/rho;
-//
-//    // Y-momentum
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      val_Jacobian[nSpecies+1][iSpecies] = -rhov*rhov/(rho*rho);
-//    val_Jacobian[nSpecies+1][nSpecies+1] = 2*rhov/rho;
-//
-//    // Energy
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      val_Jacobian[nSpecies+nDim][iSpecies]      = -H*rhov/rho + dPdU_i[iSpecies]*rhov/rho;
-//    val_Jacobian[nSpecies+nDim][nSpecies]        = dPdU_i[nSpecies]*rhov/rho;
-//    val_Jacobian[nSpecies+nDim][nSpecies+1]      = H + dPdU_i[nSpecies+1]*rhov/rho;
-//    val_Jacobian[nSpecies+nDim][nSpecies+nDim]   = (1+dPdU_i[nSpecies+nDim])*rhov/rho;
-//    val_Jacobian[nSpecies+nDim][nSpecies+nDim+1] = dPdU_i[nSpecies+nDim+1]*rhov/rho;
-//
-//    // Vib-el energy
-//    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-//      val_Jacobian[nSpecies+nDim+1][iSpecies] = -rhoEve*rhov/(rho*rho);
-//    val_Jacobian[nSpecies+nDim+1][nSpecies+1] = rhoEve/rho;
-//    val_Jacobian[nSpecies+nDim+1][nSpecies+nDim+1] = rhov/rho;
-//
-//    for (iVar = 0; iVar < nVar; iVar++)
-//      for (jVar = 0; jVar < nVar; jVar++)
-//        val_Jacobian[iVar][jVar] *= yinv*Volume;
-//  }
 
   return ResidualType<>(residual, nullptr, nullptr);
 }
