@@ -79,6 +79,7 @@ protected:
   hs,                                    /*!< \brief Species enthalpies */
   MolarFractions,                        /*!< \brief Species molar fractions */
   ws,                                    /*!< \brief Species net production rates */
+  taus,                                  /*!< \brief Relaxtion time scales */
   DiffusionCoeff,                        /*!< \brief Species diffusion coefficients*/
   Enthalpy_Formation,                    /*!< \brief Enthalpy of formation */
   Ref_Temperature;                       /*!< \brief Reference temperature for thermodynamic relations */
