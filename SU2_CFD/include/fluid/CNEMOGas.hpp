@@ -127,13 +127,27 @@ public:
    * \brief Compute species net production rates.
    */
   virtual vector<su2double>& ComputeNetProductionRates(bool implicit, const su2double *V, su2double* eve,
-                                               su2double* cvve, su2double* dTdU, su2double* dTvedU,
-                                               su2double **val_jacobian) = 0;
+                                                       su2double* cvve, su2double* dTdU, su2double* dTvedU,
+                                                       su2double **val_jacobian) = 0;
+
+  /*!
+   * \brief Populate chemical source term jacobian. 
+   */
+  virtual void ChemistryJacobian(unsigned short iReaction, const su2double *V, su2double* eve,
+                                 su2double* cvve, su2double* dTdU, su2double* dTvedU,
+                                 su2double **val_jacobian){};
 
   /*!
    * \brief Compute vibrational energy source term.
    */
   virtual su2double ComputeEveSourceTerm() { return 0; }
+
+  /*!
+   * \brief Compute vibration enery source term jacobian.
+   */
+  virtual void GetEveSourceTermJacobian(const su2double *V,su2double *eve, su2double *cvve,
+                                        su2double *dTdU, su2double* dTvedU,
+                                        su2double **val_jacobian){};
 
   /*!
    * \brief Compute vector of species V-E energy.
