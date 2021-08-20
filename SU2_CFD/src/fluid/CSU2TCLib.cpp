@@ -870,11 +870,139 @@ vector<su2double>& CSU2TCLib::ComputeNetProductionRates(bool implicit, const su2
         ws[iSpecies] -= MolarMass[iSpecies] * (fwdRxn-bkwRxn);
     }
 
+    if (implicit) {
+      ChemistryJacobian(iReaction, V, eve, cvve, dTdU, dTvedU, val_jacobian);
+    }
   } //iReaction
 
   return ws;
 }
 
+void CSU2TCLib::ChemistryJacobian(unsigned short iReaction, const su2double *V, 
+                                  su2double* eve, su2double *cvve,
+                                  su2double* dTdU, su2double* dTvedU,
+                                  su2double **val_jacobian) {
+
+  unsigned short ii, iVar, jVar, iSpecies;
+  unsigned short nEve = nSpecies+nDim+1;
+  unsigned short nVar = nSpecies+nDim+2;
+
+  /*--- Initializing derivative variables ---*/
+  dkf.resize(nVar,0.0);      dkb.resize(nVar,0.0);
+  dRfok.resize(nVar,0.0);    dRbok.resize(nVar,0.0);
+  alphak.resize(nSpecies,0); betak.resize(nSpecies,0);
+
+  for (iVar=0;iVar<nVar;iVar++){
+   dkf[iVar]=0.0; dRfok[iVar]=0.0;
+   dkb[iVar]=0.0; dRbok[iVar]=0.0;
+  }
+  
+  for (iSpecies=0;iSpecies<nSpecies;iSpecies++){
+   alphak[iSpecies]=0; betak[iSpecies]=0;
+  }
+
+  /*--- Extract additional Arrhenius information ---*/
+  su2double eta   = ArrheniusEta[iReaction];
+  su2double theta = ArrheniusTheta[iReaction];
+
+  /*--- Derivative of modified temperature wrt Trxnf ---*/
+  dThf = 0.5 * (1.0 + (Trxnf-T_min)/sqrt((Trxnf-T_min)*(Trxnf-T_min)
+                                                  + epsilon*epsilon));
+  dThb = 0.5 * (1.0 + (Trxnb-T_min)/sqrt((Trxnb-T_min)*(Trxnb-T_min)
+                                                  + epsilon*epsilon));
+
+  /*--- Fwd rate coefficient derivatives ---*/
+  coeff = kf * (eta/Thf+theta/(Thf*Thf)) * dThf;
+  for (iVar = 0; iVar < nVar; iVar++) {
+    dkf[iVar] = coeff * ( af*Trxnf/T*dTdU[iVar] +
+                          bf*Trxnf/Tve*dTvedU[iVar] );
+  }
+
+  /*--- Bkwd rate coefficient derivatives ---*/
+  coeff = kb * (eta/Thb+theta/(Thb*Thb)) * dThb;
+  for (iVar = 0; iVar < nVar; iVar++) {
+    dkb[iVar] = coeff*( ab*Trxnb/T*dTdU[iVar] + bb*Trxnb/Tve*dTvedU[iVar])
+                      - kb*((A[0]*Thb/1E4 - A[2] - A[3]*1E4/Thb
+                      - 2*A[4]*(1E4/Thb)*(1E4/Thb))/Thb) * dThb *
+                      ( ab*Trxnb/T*dTdU[iVar] + bb*Trxnb/Tve*dTvedU[iVar]);
+  }
+
+  /*--- Rxn rate derivatives ---*/
+  for (ii = 0; ii < 3; ii++) {
+
+    /*--- Products ---*/
+    iSpecies = Reactions(iReaction,1,ii);
+    if (iSpecies != nSpecies)
+      betak[iSpecies]++;
+
+    /*--- Reactants ---*/
+    iSpecies = Reactions(iReaction,0,ii);
+    if (iSpecies != nSpecies)
+      alphak[iSpecies]++;
+  }
+
+  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+
+    // Fwd
+    dRfok[iSpecies] =  0.001*alphak[iSpecies]/MolarMass[iSpecies] *
+                       pow(0.001*rhos[iSpecies]/MolarMass[iSpecies],
+                       max(0, alphak[iSpecies]-1));
+
+    for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
+      if (jSpecies != iSpecies)
+        dRfok[iSpecies] *= pow(0.001*rhos[jSpecies]/MolarMass[jSpecies],
+                                                       alphak[jSpecies]);
+    dRfok[iSpecies] *= 1000.0;
+
+    // Bkw
+    dRbok[iSpecies] =  0.001*betak[iSpecies]/MolarMass[iSpecies] *
+                       pow(0.001*rhos[iSpecies]/MolarMass[iSpecies],
+                       max(0, betak[iSpecies]-1));
+
+    for (jSpecies = 0; jSpecies < nSpecies; jSpecies++)
+      if (jSpecies != iSpecies)
+        dRbok[iSpecies] *= pow(0.001*rhos[jSpecies]/MolarMass[jSpecies],
+                                                        betak[jSpecies]);
+    dRbok[iSpecies] *= 1000.0;
+  }
+
+  for (ii = 0; ii < 3; ii++) {
+
+    /*--- Products ---*/
+    iSpecies = Reactions(iReaction,1,ii);
+    if (iSpecies != nSpecies) {
+      for (iVar = 0; iVar < nVar; iVar++) {
+        val_jacobian[iSpecies][iVar] += MolarMass[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar] -
+                                                                dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]); //TODO * Volume;
+        val_jacobian[nEve][iVar]     += MolarMass[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar] -
+                                                                dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]) *
+                                                                eve[iSpecies];//TODO * Volume;
+      }
+
+      for (jVar = 0; jVar < nVar; jVar++) {
+        val_jacobian[nEve][jVar] += MolarMass[iSpecies] * (fwdRxn-bkwRxn)* cvve[iSpecies] *
+                                                                             dTvedU[jVar];//TODO * Volume;
+      }
+    }
+
+    /*--- Reactants ---*/
+    iSpecies = Reactions(iReaction,0,ii);
+    if (iSpecies != nSpecies) {
+      for (iVar = 0; iVar < nVar; iVar++) {
+        val_jacobian[iSpecies][iVar] -= MolarMass[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar] -
+                                                                dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]);//TODO * Volume;
+        val_jacobian[nEve][iVar] -=     MolarMass[iSpecies] * ( dkf[iVar]*(fwdRxn/kf) + kf*dRfok[iVar] -
+                                                                dkb[iVar]*(bkwRxn/kb) - kb*dRbok[iVar]) *
+                                                                                         eve[iSpecies];//TODO * Volume;
+      }
+
+      for (jVar = 0; jVar < nVar; jVar++) {
+        val_jacobian[nEve][jVar] -= MolarMass[iSpecies] * (fwdRxn-bkwRxn) * cvve[iSpecies] *
+                                                                              dTvedU[jVar];//TODO * Volume;
+      }
+    }
+  } // ii
+}
 void CSU2TCLib::ComputeKeqConstants(unsigned short val_Reaction) {
 
   unsigned short ii;

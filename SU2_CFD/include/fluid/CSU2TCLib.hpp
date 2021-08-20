@@ -146,9 +146,9 @@ public:
   /*!
    * \brief Compute chemical source term jacobian. 
    */
-  //void ChemistryJacobian(unsigned short iReaction, const su2double *V, su2double* eve,
-  //                       su2double* cvve, su2double* dTdU, su2double* dTvedU,
-  //                       su2double **val_jacobian) final;
+  void ChemistryJacobian(unsigned short iReaction, const su2double *V, su2double* eve,
+                         su2double* cvve, su2double* dTdU, su2double* dTvedU,
+                         su2double **val_jacobian) final;
 
   /*!
    * \brief Compute vibrational energy source term.
