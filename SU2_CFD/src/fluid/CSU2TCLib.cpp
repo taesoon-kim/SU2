@@ -646,7 +646,7 @@ vector<su2double>& CSU2TCLib::ComputeSpeciesCvVibEle(su2double val_T){
   /*--- Rename for convenience. ---*/
   Tve = val_T;
 
-  /*--- Loop through species. ---*/
+  /*--- Loop through species ---*/
   for(iSpecies = 0; iSpecies < nSpecies; iSpecies++){
 
     /*--- If requesting electron specific heat ---*/
