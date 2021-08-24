@@ -133,7 +133,7 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeVibRelaxation(const CConfig *conf
   su2double res_min = -1E6;
   su2double res_max = 1E6;
   vector<su2double> rhos;
-
+  
   rhos.resize(nSpecies,0.0);
 
   /*--- Initialize residual and Jacobian arrays ---*/
@@ -156,7 +156,7 @@ CNumerics::ResidualType<> CSource_NEMO::ComputeVibRelaxation(const CConfig *conf
   fluidmodel->SetTDStateRhosTTv(rhos, T, Tve);
 
   /*--- Compute residual and jacobians ---*/
-  VTterm = fluidmodel -> ComputeEveSourceTerm();
+  VTterm = fluidmodel->ComputeEveSourceTerm();
   if (implicit) {
     fluidmodel->GetEveSourceTermJacobian(V_i, eve_i, Cvve_i, dTdU_i,
                                          dTvedU_i, jacobian);
