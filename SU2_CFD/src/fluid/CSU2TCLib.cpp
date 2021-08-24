@@ -49,9 +49,9 @@ CSU2TCLib::CSU2TCLib(const CConfig* config, unsigned short val_nDim, bool viscou
   Omega11.resize(nSpecies,nSpecies,4,0.0);
   RxnConstantTable.resize(6,5) = su2double(0.0);
   Blottner.resize(nSpecies,3)  = su2double(0.0);
-    taus.resize(nSpecies,0.0);
-    eve_eq.resize(nSpecies,0.0);
-    eve.resize(nSpecies,0.0);
+  taus.resize(nSpecies,0.0);
+  eve_eq.resize(nSpecies,0.0);
+  eve.resize(nSpecies,0.0);
 
   if(viscous){
     MolarFracWBE.resize(nSpecies,0.0);
@@ -1146,16 +1146,13 @@ void CSU2TCLib::GetEveSourceTermJacobian(const su2double *V, su2double *eve, su2
   /*--- Loop through species ---*/
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++){ // segfault is in this loop
 
-    for (iVar = 0; iVar < nVar; iVar++) { 
-    
-        val_jacobian[nEv][iVar] += rhos[iSpecies]/taus[iSpecies]*(cvve_eq[iSpecies]*dTdU[iVar] - cvve[iSpecies]*dTvedU[iVar]);//rhos[iSpecies]/taus[iSpecies]*(cvve_eq[iSpecies]*dTdU[iVar] -
-                                   //                             cvve[iSpecies]*dTvedU[iVar]);//TODO*Volume;
+    for (iVar = 0; iVar < nVar; iVar++) {
+        val_jacobian[nEv][iVar] += rhos[iSpecies]/taus[iSpecies]*(cvve_eq[iSpecies]*dTdU[iVar]-cvve[iSpecies]*dTvedU[iVar]);//TODO*Volume;
     }
   }
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-      val_jacobian[nEv][iSpecies] += eve_eq[iSpecies];//(eve_eq[iSpecies]-eve[iSpecies])/taus[iSpecies];//(eve_eq[iSpecies]-eve[iSpecies])/taus[iSpecies];//TODO *Volume;
-
+      val_jacobian[nEv][iSpecies] += (eve_eq[iSpecies]-eve[iSpecies])/taus[iSpecies];//TODO *Volume;
 }
 
 vector<su2double>& CSU2TCLib::ComputeSpeciesEnthalpy(su2double val_T, su2double val_Tve, su2double *val_eves){
