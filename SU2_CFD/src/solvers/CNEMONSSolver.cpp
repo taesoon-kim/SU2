@@ -261,7 +261,7 @@ void CNEMONSSolver::BC_HeatFluxNonCatalytic_Wall(CGeometry *geometry,
   /*--- Local variables ---*/
   const auto Marker_Tag = config->GetMarker_All_TagBound(val_marker);
   su2double Wall_HeatFlux = config->GetWall_HeatFlux(Marker_Tag)/config->GetHeat_Flux_Ref();
-
+  bool implicit = false; //TODO
   /*--- Set "Proportional control" coefficient ---*/
   su2double pcontrol = 1.0;
 
@@ -341,18 +341,11 @@ void CNEMONSSolver::BC_HeatFluxNonCatalytic_Wall(CGeometry *geometry,
     /*--- Apply viscous residual to the linear system ---*/
     LinSysRes.SubtractBlock(iPoint, Res_Visc);
 
-    /*--- Apply the no-slip condition in a strong way ---*/
-    for (iDim = 0; iDim < nDim; iDim++) Vector[iDim] = 0.0;
-    nodes->SetVelocity_Old(iPoint,Vector);
-    for (iDim = 0; iDim < nDim; iDim++) {
-      LinSysRes(iPoint, nSpecies+iDim) = 0.0;
-      nodes->SetVal_ResTruncError_Zero(iPoint,nSpecies+iDim);
-    }
     if (implicit) {
       //TODO
       /*--- Enforce the no-slip boundary condition in a strong way ---*/
-      for (iVar = nSpecies; iVar < nSpecies+nDim; iVar++) {
-        total_index = iPoint*nVar+iVar;
+      for (auto iVar = nSpecies; iVar < nSpecies+nDim; iVar++) {
+        su2double total_index = iPoint*nVar+iVar;
         Jacobian.DeleteValsRowi(total_index);
       }
     }
@@ -691,23 +684,23 @@ void CNEMONSSolver::BC_IsothermalNonCatalytic_Wall(CGeometry *geometry,
                                  (ktr*(Twall-Ti) + kve*(Twall-Tvei))*C)*Area/dist_ij;
     Res_Visc[nSpecies+nDim+1] = (kve*(Tvei-Tvej) + kve*(Twall-Tvei) *C)*Area/dist_ij;
 
-      LinSysRes.SubtractBlock(iPoint, Res_Visc);
+    LinSysRes.SubtractBlock(iPoint, Res_Visc);
 
-      if (implicit) {
-        for (iVar = 0; iVar < nVar; iVar++)
-          for (jVar = 0; jVar < nVar; jVar++)
-            Jacobian_i[iVar][jVar] = 0.0;
+    if (implicit) {
+      for (auto iVar = 0u; iVar < nVar; iVar++)
+        for (auto jVar = 0u; jVar < nVar; jVar++)
+          Jacobian_i[iVar][jVar] = 0.0;
 
-        auto dTdU   = nodes->GetdTdU(iPoint);
-        auto dTvedU = nodes->GetdTvedU(iPoint);
-        for (iVar = 0; iVar < nVar; iVar++) {
-          Jacobian_i[nSpecies+nDim][iVar]   = -(ktr*theta/dij*dTdU[iVar] +
-                                                kve*theta/dij*dTvedU[iVar])*Area;
-          Jacobian_i[nSpecies+nDim+1][iVar] = - kve*theta/dij*dTvedU[iVar]*Area;
-        }
-        Jacobian.SubtractBlock2Diag(iPoint, Jacobian_i);
-      } // implicit
-    }
+      auto dTdU   = nodes->GetdTdU(iPoint);
+      auto dTvedU = nodes->GetdTvedU(iPoint);
+      su2double theta = 0.0; //TODO
+      for (auto iVar = 0u; iVar < nVar; iVar++) {
+        Jacobian_i[nSpecies+nDim][iVar]   = -(ktr*theta/dist_ij*dTdU[iVar] +
+                                              kve*theta/dist_ij*dTvedU[iVar])*Area;
+        Jacobian_i[nSpecies+nDim+1][iVar] = - kve*theta/dist_ij*dTvedU[iVar]*Area;
+      }
+      Jacobian.SubtractBlock2Diag(iPoint, Jacobian_i);
+    } // implicit
   }
   END_SU2_OMP_FOR
 
