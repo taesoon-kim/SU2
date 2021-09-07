@@ -1141,13 +1141,13 @@ void CSU2TCLib::GetEveSourceTermJacobian(const su2double *V, su2double *eve, su2
   unsigned short iVar;
   unsigned short nEv  = nSpecies+nDim+1;
   unsigned short nVar = nSpecies+nDim+2;
-    
+
   /*--- Compute Cvvs ---*/
   cvve_eq.resize(nSpecies,0.0);
   cvve_eq = ComputeSpeciesCvVibEle(T);
-    
+
   /*--- Loop through species ---*/
-  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++){ // segfault is in this loop
+  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++){
 
     for (iVar = 0; iVar < nVar; iVar++) {
         val_jacobian[nEv][iVar] += rhos[iSpecies]/taus[iSpecies]*(cvve_eq[iSpecies]*dTdU[iVar]-cvve[iSpecies]*dTvedU[iVar]);//TODO*Volume;
@@ -1157,7 +1157,6 @@ void CSU2TCLib::GetEveSourceTermJacobian(const su2double *V, su2double *eve, su2
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
       val_jacobian[nEv][iSpecies] += (eve_eq[iSpecies]-eve[iSpecies])/taus[iSpecies];//TODO *Volume;
 }
-
 vector<su2double>& CSU2TCLib::ComputeSpeciesEnthalpy(su2double val_T, su2double val_Tve, su2double *val_eves){
 
   vector<su2double> cvtrs;
