@@ -890,6 +890,9 @@ void CSU2TCLib::ChemistryJacobian(unsigned short iReaction, const su2double *V,
   unsigned short nEve = nSpecies+nDim+1;
   unsigned short nVar = nSpecies+nDim+2;
 
+  su2double T_min   = 800.0;
+  su2double epsilon = 80;
+    
   /*--- Initializing derivative variables ---*/
   dkf.resize(nVar,0.0);      dkb.resize(nVar,0.0);
   dRfok.resize(nVar,0.0);    dRbok.resize(nVar,0.0);
