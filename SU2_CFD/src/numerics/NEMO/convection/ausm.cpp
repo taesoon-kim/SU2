@@ -268,6 +268,12 @@ CNumerics::ResidualType<> CUpwAUSM_NEMO::ComputeResidual(const CConfig *config) 
       }
     }
       
+      
+      for (iVar = 0; iVar < nVar; iVar++) {
+        delete [] P_Tensor[iVar];
+        delete [] invP_Tensor[iVar];
+      }
+      
       delete [] RoeU;
       delete [] RoeV;
       delete [] RoedPdU;
