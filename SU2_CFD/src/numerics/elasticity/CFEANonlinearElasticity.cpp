@@ -3,7 +3,7 @@
  * \brief This file contains the routines for setting the tangent matrix and
  *        residual of a FEM nonlinear elastic structural problem.
  * \author R. Sanchez
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -32,7 +32,7 @@
 CFEANonlinearElasticity::CFEANonlinearElasticity(unsigned short val_nDim, unsigned short val_nVar,
                                    const CConfig *config) : CFEAElasticity(val_nDim, val_nVar, config) {
 
-  nearly_incompressible = (config->GetMaterialCompressibility() == NEARLY_INCOMPRESSIBLE_MAT);
+  nearly_incompressible = (config->GetMaterialCompressibility() == STRUCT_COMPRESS::NEARLY_INCOMP);
 
   unsigned short iVar;
 

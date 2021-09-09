@@ -2,7 +2,7 @@
  * \file ausmplusup2.cpp
  * \brief Implementations of the AUSM-family of schemes - AUSM+UP2.
  * \author W. Maier, A. Sachedeva, C. Garbacz
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -76,7 +76,8 @@ CNumerics::ResidualType<> CUpwAUSMPLUSUP2_NEMO::ComputeResidual(const CConfig *c
 
   unsigned short iDim, iVar, iSpecies;
   su2double rho_i, rho_j,
-  e_ve_i, e_ve_j, mL, mR, mLP, mRM, mF, pLP, pRM, pF, Phi, sq_veli, sq_velj;
+  mL, mR, mLP, mRM, mF, pLP, pRM, pF, Phi,
+  e_ve_i, e_ve_j, sq_veli, sq_velj;
 
   /*--- Face area ---*/
   Area = GeometryToolbox::Norm(nDim, Normal);

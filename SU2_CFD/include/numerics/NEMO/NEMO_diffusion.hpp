@@ -2,7 +2,7 @@
  * \file NEMO_diffusion.hpp
  * \brief Declarations of numerics classes for viscous flux computation.
  * \author S.R. Copeland, W. Maier, C. Garbacz.
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -34,12 +34,13 @@
  * \brief Class for computing viscous term using the average of gradients.
  * \ingroup ViscDiscr
  * \author S.R. Copeland, W. Maier, C. Garbacz
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  */
 class CAvgGrad_NEMO : public CNEMONumerics {
 private:
-  unsigned short iDim, iVar;    /*!< \brief Iterators in dimension an variable. */
-  su2double *Mean_PrimVar,          /*!< \brief Mean primitive variables. */
+    
+  unsigned short iDim, iVar;  /*!< \brief Iterators in dimension an variable. */
+  su2double *Mean_PrimVar,    /*!< \brief Mean primitive variables. */
   *Mean_U,
   **Mean_GU,
   *Mean_dTdU,
@@ -90,7 +91,7 @@ public:
  * \brief Class for computing viscous term using the average of gradients.
  * \ingroup ViscDiscr
  * \author C. Garbacz, W. Maier, S.R. Copeland.
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  */
 class CAvgGradCorrected_NEMO : public CNEMONumerics {
 private:

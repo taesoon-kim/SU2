@@ -2,7 +2,7 @@
  * \file CMMSIncNSSolution.cpp
  * \brief Implementations of the member functions of CMMSIncNSSolution.
  * \author T. Economon, E. van der Weide
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -78,7 +78,7 @@ CMMSIncNSSolution::CMMSIncNSSolution(unsigned short val_nDim,
     SU2_MPI::Error("Constant density fluid model must be selected for the MMS incompressible NS case",
                    CURRENT_FUNCTION);
 
-  if(config->GetKind_ViscosityModel() != CONSTANT_VISCOSITY)
+  if(config->GetKind_ViscosityModel() != VISCOSITYMODEL::CONSTANT)
     SU2_MPI::Error("Constant viscosity must be selected for the MMS incompressible NS case",
                    CURRENT_FUNCTION);
 

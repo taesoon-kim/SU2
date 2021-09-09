@@ -3,7 +3,7 @@
  * \brief Implementation of numerics classes for integration of
  *        turbulence source-terms.
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -139,7 +139,8 @@ CNumerics::ResidualType<> CSourcePieceWise_TurbSA::ComputeResidual(const CConfig
       const su2double chi_1 = 0.002;
       const su2double chi_2 = 50.0;
 
-      su2double tu = config->GetTurbulenceIntensity_FreeStream();
+      /*--- turbulence intensity is u'/U so we multiply by 100 to get percentage ---*/
+      su2double tu = 100.0 * config->GetTurbulenceIntensity_FreeStream();
 
       su2double nu_t = (TurbVar_i[0]*fv1); //S-A variable
 

@@ -2,7 +2,7 @@
  * \file CMMSNSUnitQuadSolutionWallBC.cpp
  * \brief Implementations of the member functions of CMMSNSUnitQuadSolutionWallBC.
  * \author T. Economon, E. van der Weide
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -101,11 +101,11 @@ CMMSNSUnitQuadSolutionWallBC::CMMSNSUnitQuadSolutionWallBC(unsigned short val_nD
     SU2_MPI::Error("Standard air or ideal gas must be selected for the MMS NS Unit Quad case with wall BCs.",
                    CURRENT_FUNCTION);
 
-  if(config->GetKind_ViscosityModel() != CONSTANT_VISCOSITY)
+  if(config->GetKind_ViscosityModel() != VISCOSITYMODEL::CONSTANT)
     SU2_MPI::Error("Sutherland must be selected for viscosity for the MMS NS Unit Quad case with wall BCs.",
                    CURRENT_FUNCTION);
 
-  if(config->GetKind_ConductivityModel() != CONSTANT_PRANDTL)
+  if(config->GetKind_ConductivityModel() != CONDUCTIVITYMODEL::CONSTANT_PRANDTL)
     SU2_MPI::Error("Constant Prandtl number must be selected for the MMS NS Unit Quad case with wall BCs.",
                    CURRENT_FUNCTION);
 }

@@ -2,7 +2,7 @@
  * \file CFEAElasticity.cpp
  * \brief Base class for all elasticity problems.
  * \author R. Sanchez
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -75,7 +75,7 @@ CFEAElasticity::CFEAElasticity(unsigned short val_nDim, unsigned short val_nVar,
   FAux_Dead_Load = nullptr;
   if (body_forces) FAux_Dead_Load = new su2double [nDim];
 
-  plane_stress = (config->GetElas2D_Formulation() == PLANE_STRESS);
+  plane_stress = (config->GetElas2D_Formulation() == STRUCT_2DFORM::PLANE_STRESS);
 
   KAux_ab = new su2double* [nDim];
   for (iVar = 0; iVar < nDim; iVar++) {

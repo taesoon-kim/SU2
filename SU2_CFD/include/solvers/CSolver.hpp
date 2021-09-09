@@ -2,7 +2,7 @@
  * \file CSolver.hpp
  * \brief Headers of the CSolver class which is inherited by all of the other solvers
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -172,6 +172,13 @@ protected:
 
 private:
 
+  /*!
+   * \brief Interpolate Restart_Data after reading it.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void InterpolateRestartData(const CGeometry *geometry, const CConfig *config);
+
   /*--- Private to prevent use by derived solvers, each solver MUST have its own "nodes" member of the
    most derived type possible, e.g. CEulerSolver has nodes of CEulerVariable* and not CVariable*.
    This variable is to avoid two virtual functions calls per call i.e. CSolver::GetNodes() returns
@@ -211,6 +218,11 @@ public:
   #endif
 
   vector<string> fields;
+
+#ifdef HAVE_LIBROM
+  std::unique_ptr<CAROM::BasisGenerator> u_basis_generator;
+#endif
+
   /*!
    * \brief Constructor of the class.
    */
@@ -645,7 +657,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  virtual void Restart_OldGeometry(CGeometry *geometry, CConfig *config);
+  void Restart_OldGeometry(CGeometry *geometry, CConfig *config);
 
   /*!
    * \brief A virtual member.
@@ -839,48 +851,40 @@ public:
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Clamped(CGeometry *geometry,
-                                 CNumerics *numerics,
                                  const CConfig *config,
                                  unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Clamped_Post(CGeometry *geometry,
-                                      CNumerics *numerics,
                                       const CConfig *config,
                                       unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Sym_Plane(CGeometry *geometry,
-                                   CNumerics *numerics,
                                    const CConfig *config,
                                    unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_DispDir(CGeometry *geometry,
-                                 CNumerics *numerics,
                                  const CConfig *config,
                                  unsigned short val_marker) { }
 
@@ -899,91 +903,43 @@ public:
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Normal_Load(CGeometry *geometry,
-                                     CNumerics *numerics,
                                      const CConfig *config,
                                      unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Dir_Load(CGeometry *geometry,
-                                  CNumerics *numerics,
                                   const CConfig *config,
                                   unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] solver - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
 
   inline virtual void BC_Sine_Load(CGeometry *geometry,
-                                   CNumerics *numerics,
                                    const CConfig *config,
                                    unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker - Surface marker where the boundary condition is applied.
    */
   inline virtual void BC_Damper(CGeometry *geometry,
-                                CNumerics *numerics,
                                 const CConfig *config,
                                 unsigned short val_marker) { }
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] numerics - Description of the numerical method.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] val_marker - Surface marker where the boundary condition is applied.
-   */
-  inline virtual void BC_Deforming(CGeometry *geometry,
-                                   CNumerics *numerics,
-                                   const CConfig *config,
-                                   unsigned short val_marker) { }
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] solver_container - Container vector with all the solutions.
-   * \param[in] numerics - Description of the numerical method.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] val_marker - Surface marker where the boundary condition is applied.
-   */
-  inline virtual void BC_Interface_Boundary(CGeometry *geometry,
-                                            CSolver **solver_container,
-                                            CNumerics *numerics,
-                                            CConfig *config,
-                                            unsigned short val_marker) { }
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] solver_container - Container vector with all the solutions.
-   * \param[in] numerics - Description of the numerical method.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] val_marker - Surface marker where the boundary condition is applied.
-   */
-  inline virtual void BC_NearField_Boundary(CGeometry *geometry,
-                                            CSolver **solver_container,
-                                            CNumerics *numerics,
-                                            CConfig *config,
-                                            unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
@@ -1092,6 +1048,16 @@ public:
                                        CNumerics *visc_numerics,
                                        CConfig *config,
                                        unsigned short val_marker) { }
+
+  /*!
+   * \brief Impose a heat flux by prescribing a heat transfer coefficient and a temperature at infinity.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+  inline virtual void BC_HeatTransfer_Wall(const CGeometry *geometry,
+                                           const CConfig *config,
+                                           const unsigned short val_marker) { }
 
   /*!
    * \brief A virtual member.
@@ -1791,16 +1757,6 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   inline virtual void SetForceProj_Vector(CGeometry *geometry,
-                                          CSolver **solver_container,
-                                          CConfig *config) { }
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] solver_container - Container vector with all the solutions.
-   * \param[in] config - Definition of the particular problem.
-   */
-  inline virtual void SetIntBoundary_Jump(CGeometry *geometry,
                                           CSolver **solver_container,
                                           CConfig *config) { }
 
@@ -3214,6 +3170,22 @@ public:
 
   /*!
    * \brief A virtual member.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the u tau.
+   */
+  inline virtual su2double GetUTau(unsigned short val_marker, unsigned long val_vertex) const { return 0; }
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the eddy viscosity.
+   */
+  inline virtual su2double GetEddyViscWall(unsigned short val_marker, unsigned long val_vertex) const { return 0; }
+
+  /*!
+   * \brief A virtual member.
    * \return Value of the StrainMag_Max
    */
   inline virtual su2double GetStrainMag_Max(void) const { return 0; }
@@ -3559,7 +3531,7 @@ public:
    * \param[in] config - Definition of the problem.
    */
   inline virtual void PredictStruct_Displacement(CGeometry *geometry,
-                                                 CConfig *config) { }
+                                                 const CConfig *config) { }
 
   /*!
    * \brief A virtual member.
@@ -3568,7 +3540,7 @@ public:
    * \param[in] iOuterIter - Current outer iteration.
    */
   inline virtual void ComputeAitken_Coefficient(CGeometry *geometry,
-                                                CConfig *config,
+                                                const CConfig *config,
                                                 unsigned long iOuterIter) { }
 
   /*!
@@ -3577,7 +3549,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   inline virtual void SetAitken_Relaxation(CGeometry *geometry,
-                                           CConfig *config) { }
+                                           const CConfig *config) { }
 
   /*!
    * \brief Loads the solution from the restart file.
@@ -3757,8 +3729,9 @@ public:
    * \param[in] geometry - The geometrical definition of the problem.
    * \param[in] solver_container - The solver container holding all solutions.
    * \param[in] config - The particular config.
+   * \param[in] CrossTerm - Boolean to determine if this is a cross term extraction.
    */
-  inline virtual void ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config){}
+  inline virtual void ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config, bool CrossTerm){}
 
   /*!
    * \brief  A virtual member.
@@ -4450,6 +4423,13 @@ public:
    */
   virtual StreamwisePeriodicValues GetStreamwisePeriodicValues() const { return StreamwisePeriodicValues(); }
 
+  /*!
+   * \brief Save snapshot or POD data using libROM
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] converged - Whether or not solution has converged.
+  */
+  void SavelibROM(CGeometry *geometry, CConfig *config, bool converged);
 
 protected:
   /*!
