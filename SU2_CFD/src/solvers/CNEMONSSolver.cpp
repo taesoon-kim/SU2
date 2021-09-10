@@ -708,24 +708,6 @@ void CNEMONSSolver::BC_IsothermalNonCatalytic_Wall(CGeometry *geometry,
       delete [] Jacobian_i[iVar];
   delete [] Jacobian_i;
 
-      LinSysRes.SubtractBlock(iPoint, Res_Visc);
-
-      if (implicit) {
-        for (iVar = 0; iVar < nVar; iVar++)
-          for (jVar = 0; jVar < nVar; jVar++)
-            Jacobian_i[iVar][jVar] = 0.0;
-      
-        dTdU   = nodes->GetdTdU(iPoint);
-        dTvedU = nodes->GetdTvedU(iPoint);
-        for (iVar = 0; iVar < nVar; iVar++) {
-          Jacobian_i[nSpecies+nDim][iVar]   = -(ktr*theta/dij*dTdU[iVar] +
-                                                kve*theta/dij*dTvedU[iVar])*Area;
-          Jacobian_i[nSpecies+nDim+1][iVar] = - kve*theta/dij*dTvedU[iVar]*Area;
-        }
-        Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
-      } // implicit
-    }
-  }
 }
 
 void CNEMONSSolver::BC_IsothermalCatalytic_Wall(CGeometry *geometry,
@@ -1034,6 +1016,7 @@ void CNEMONSSolver::BC_Smoluchowski_Maxwell(CGeometry *geometry,
     for (auto iDim = 0u; iDim < nDim; iDim++) {
       Vector_Tangent_dT[iDim]   = Grad_PrimVar[T_INDEX][iDim] - dTn * UnitNormal[iDim];
       Vector_Tangent_dTve[iDim] = Grad_PrimVar[TVE_INDEX][iDim] - dTven * UnitNormal[iDim];
+
     }
 
     /*--- Calculate Heatflux tangent to surface ---*/

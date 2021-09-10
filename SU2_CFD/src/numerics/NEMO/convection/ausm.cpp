@@ -84,7 +84,8 @@ CNumerics::ResidualType<> CUpwAUSM_NEMO::ComputeResidual(const CConfig *config) 
 
   unsigned short iDim, iVar, jVar, iSpecies;
 
-  su2double rho_i, rho_j, Ru, e_ve_i, e_ve_j, mL, mR, mLP, mRM, mF, pLP, pRM, pF, Phi;
+  su2double rho_i, rho_j, Ru,
+  e_ve_i, e_ve_j, mL, mR, mLP, mRM, mF, pLP, pRM, pF, Phi;
 
   /*--- Compute geometric quantities ---*/
   Area = GeometryToolbox::Norm(nDim, Normal);

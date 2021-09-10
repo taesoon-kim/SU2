@@ -124,7 +124,7 @@ public:
   virtual vector<su2double>& ComputeMixtureEnergies() = 0;
 
     /*!
-   * \brief Get vibrational energy source term.
+   * \brief Compute chemical production and destruction rates.
    */
   virtual vector<su2double>& ComputeNetProductionRates(bool implicit, const su2double *V, su2double* eve,
                                                        su2double* cvve, su2double* dTdU, su2double* dTvedU,
@@ -133,7 +133,8 @@ public:
   /*!
    * \brief Populate chemical source term jacobian. 
    */
-  virtual void ChemistryJacobian(unsigned short iReaction, const su2double *V, su2double* eve, su2double* cvve, su2double* dTdU, su2double* dTvedU,
+  virtual void ChemistryJacobian(unsigned short iReaction, const su2double *V, su2double* eve,
+                                 su2double* cvve, su2double* dTdU, su2double* dTvedU,
                                  su2double **val_jacobian){};
 
   /*!

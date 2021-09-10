@@ -201,8 +201,7 @@ if get_option('enable-librom')
 
    su2_deps += librom_dep
 
-
- endif
+endif
 
 extra_deps = get_option('extra-deps').split(',')
 foreach dep : extra_deps

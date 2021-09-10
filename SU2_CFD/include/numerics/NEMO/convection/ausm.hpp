@@ -34,7 +34,6 @@
  * \brief Class for solving an approximate Riemann AUSM.
  * \ingroup ConvDiscr
  * \author F. Palacios, S.R. Copeland, W. Maier, C. Garbacz
- * \version 7.1.1 "Blackbird"
  */
 class CUpwAUSM_NEMO : public CNEMONumerics {
 private:
@@ -47,7 +46,7 @@ private:
   /************************************/
   //DELETE ME TODO: ROE JACOBIAN STUFF
   /*__________________________________*/
-    
+
   su2double *Diff_U;
   su2double *RoeU, *RoeV;
   vector<su2double> roe_eves;

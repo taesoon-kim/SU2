@@ -458,12 +458,13 @@ class COptionMathProblem : public COptionBase {
   bool rom_def;
 
 public:
+
   COptionMathProblem(string option_field_name, bool & cont_adjoint_field, bool cont_adjoint_default, bool & disc_adjoint_field, bool disc_adjoint_default, bool & restart_field, bool restart_default, bool & rom_field, bool rom_default) : cont_adjoint(cont_adjoint_field), disc_adjoint(disc_adjoint_field), restart(restart_field), rom(rom_field) {
-    this->name = option_field_name;
-    this->cont_adjoint_def = cont_adjoint_default;
-    this->disc_adjoint_def = disc_adjoint_default;
-    this->restart_def = restart_default;
-    this->rom_def = rom_default;
+    name = option_field_name;
+    cont_adjoint_def = cont_adjoint_default;
+    disc_adjoint_def = disc_adjoint_default;
+    restart_def = restart_default;
+    rom_def = rom_default;
   }
 
   ~COptionMathProblem() override {};
@@ -480,28 +481,31 @@ public:
       cont_adjoint = false;
       disc_adjoint = false;
       restart = false;
+      rom = false;
       return "";
     }
     else if (option_value[0] == "CONTINUOUS_ADJOINT") {
       cont_adjoint= true;
       disc_adjoint = false;
       restart= true;
+      rom = false;
       return "";
     }
     else if (option_value[0] == "DISCRETE_ADJOINT") {
       disc_adjoint = true;
       cont_adjoint= false;
       restart = true;
+      rom = false;
       return "";
     }
-    if (option_value[0] == "ROM") {
-      this->disc_adjoint = false;
-      this->cont_adjoint= false;
-      this->restart = false;
-      this->rom = true;
+    else if (option_value[0] == "ROM") {
+      disc_adjoint = false;
+      cont_adjoint= false;
+      restart = false;
+      rom = true;
       return "";
-    }
-    return "option in math problem map not considered in constructor";
+    }  
+    return badValue(option_value, "math problem", name);
   }
 
   void SetDefault() override {

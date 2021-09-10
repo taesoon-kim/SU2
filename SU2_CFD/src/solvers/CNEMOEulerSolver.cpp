@@ -484,6 +484,9 @@ void CNEMOEulerSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_con
   unsigned long iEdge, iPoint, jPoint;
   unsigned short iDim, iVar, jVar;
 
+  unsigned long iEdge, iPoint, jPoint;
+  unsigned short iDim, iVar, jVar;
+
   /*--- Set booleans based on config settings ---*/
   const bool implicit         = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
   const bool muscl            = (config->GetMUSCL_Flow() && (iMesh == MESH_0));

@@ -881,7 +881,7 @@ vector<su2double>& CSU2TCLib::ComputeNetProductionRates(bool implicit, const su2
   return ws;
 }
 
-void CSU2TCLib::ChemistryJacobian(unsigned short iReaction, const su2double *V,
+void CSU2TCLib::ChemistryJacobian(unsigned short iReaction, const su2double *V, 
                                   su2double* eve, su2double *cvve,
                                   su2double* dTdU, su2double* dTvedU,
                                   su2double **val_jacobian) {
@@ -1075,6 +1075,7 @@ su2double CSU2TCLib::ComputeEveSourceTerm(){
 
   MolarFrac.resize(nSpecies,0.0);
   mu.resize(nSpecies,nSpecies)=su2double(0.0);
+
   su2double omegaVT = 0.0;
   su2double omegaCV = 0.0;
 
@@ -1496,7 +1497,7 @@ void CSU2TCLib::ThermalConductivitiesGY(){
   /*--- Mixture vibrational-electronic specific heat ---*/
   Cvves = ComputeSpeciesCvVibEle(Tve);
   su2double rhoCvve = 0.0;
-    
+
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     rhoCvve += rhos[iSpecies]*Cvves[iSpecies];
   su2double Cvve = rhoCvve/Density;

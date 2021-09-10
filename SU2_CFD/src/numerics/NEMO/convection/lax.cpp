@@ -49,6 +49,7 @@ CCentLax_NEMO::CCentLax_NEMO(unsigned short val_nDim,
   ProjFlux = new su2double[nVar];
   Flux     = new su2double[nVar];
   mean_eves.resize(nSpecies,0.0);
+
   Jacobian_i = new su2double* [nVar];
   Jacobian_j = new su2double* [nVar];
   for (unsigned short iVar = 0; iVar < nVar; iVar++) {
@@ -136,6 +137,7 @@ CNumerics::ResidualType<> CCentLax_NEMO::ComputeResidual(const CConfig *config) 
   }
 
   if (implicit) {
+
     for (iVar = 0; iVar < nVar; iVar++){
       for (jVar = 0; jVar < nVar; jVar++){
         Jacobian_i[iVar][jVar] = 0.0;

@@ -1012,7 +1012,7 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
   if (rank == MASTER_NODE)
     cout << endl <<"-------------------- Solver Preprocessing ( Zone " << config->GetiZone() <<" ) --------------------" << endl;
 
-  solver = new CSolver**[config->GetnMGLevels()+1];
+  solver = new CSolver**[config->GetnMGLevels()+1] ();
   
   if (config->GetReduced_Model() && config->GetnMGLevels()>0) {
     SU2_MPI::Error("MGLEVEL must equal zero for ROM simulations", CURRENT_FUNCTION);

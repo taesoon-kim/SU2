@@ -1941,6 +1941,10 @@ void CEulerSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_contain
   AD::ResumePreaccumulation(pausePreacc);
   if (!ReducerStrategy) AD::EndNoSharedReading();
 
+  /*--- Restore preaccumulation and adjoint evaluation state. ---*/
+  AD::ResumePreaccumulation(pausePreacc);
+  if (!ReducerStrategy) AD::EndNoSharedReading();
+
   if (ReducerStrategy) {
     SumEdgeFluxes(geometry);
     if (implicit)

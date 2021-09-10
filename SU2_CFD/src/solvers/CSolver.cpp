@@ -4222,8 +4222,6 @@ void CSolver::BasicLoadRestart(CGeometry *geometry, const CConfig *config, const
   }
 }
 
-<<<<<<< HEAD
-
 #ifdef HAVE_LIBROM
 void CSolver::SavelibROM(CSolver** solver, CGeometry *geometry, CConfig *config, bool converged) {
   
