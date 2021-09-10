@@ -101,12 +101,12 @@ public:
    */
   su2double ComputeEveSourceTerm() final;
 
-  /*!
-   * \brief Get vibration enery source term jacobian.
-   */
-  void GetEveSourceTermJacobian(su2double *V, su2double *eve, su2double *cvve,
-                                su2double *dTdU, su2double* dTvedU,
-                                su2double **val_jacobian) final;
+//  /*!
+//   * \brief Get vibration enery source term jacobian.
+//   */
+//  void GetEveSourceTermJacobian(su2double *V, su2double *eve, su2double *cvve,
+//                                su2double *dTdU, su2double* dTvedU,
+//                                su2double **val_jacobian) final;
 
   /*!
    * \brief Compute species enthalpies.

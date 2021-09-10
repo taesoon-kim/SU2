@@ -1751,11 +1751,11 @@ void CEulerSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_contain
   else AD::StartNoSharedReading();
 
   /*--- Loop over edge colors. ---*/
-  for (auto color : EdgeColoring)
-  {
+//  for (auto color : EdgeColoring)
+//  {
   /*--- Chunk size is at least OMP_MIN_SIZE and a multiple of the color group size. ---*/
-  SU2_OMP_FOR_DYN(nextMultiple(OMP_MIN_SIZE, color.groupSize))
-  for(auto k = 0ul; k < color.size; ++k) {
+//  SU2_OMP_FOR_DYN(nextMultiple(OMP_MIN_SIZE, color.groupSize))
+//  for(auto k = 0ul; k < color.size; ++k) {
 
   
   for (i = 0; i < nEdge; i++) {

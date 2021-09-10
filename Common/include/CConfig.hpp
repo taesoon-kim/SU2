@@ -722,10 +722,8 @@ private:
   unsigned short output_precision;    /*!< \brief <ofstream>.precision(value) for SU2_DOT and HISTORY output */
   unsigned short ActDisk_Jump;        /*!< \brief Format of the output files. */
   unsigned long StartWindowIteration; /*!< \brief Starting Iteration for long time Windowing apporach . */
-  unsigned short POD_Basis_Gen;       /*!< \brief Type of POD basis generation (static or incremental). */
   unsigned long nHyper_Nodes;         /*!< \brief Number of hyper-reduction nodes desired. */
   unsigned short nPOD_Modes;          /*!< \brief Number of POD mdoes desired. */
-  bool libROM;                        /*!< \brief Toggle saving to libROM. */
   unsigned short nCFL_AdaptParam;     /*!< \brief Number of CFL parameters provided in config. */
   bool CFL_Adapt;        /*!< \brief Use adaptive CFL number. */
   bool HB_Precondition;  /*!< \brief Flag to turn on harmonic balance source term preconditioning */
@@ -754,7 +752,6 @@ private:
   Init_Snapshot_FileName,        /*!< \brief Initial snapshot filename for reduced order model computation. */
   Init_Coord_FileName,           /*!< \brief Initial reduced coordinates filename for reduced order model computation. */
   Ref_Snapshot_FileName,         /*!< \brief Reference snapshot filename for reduced order model computation. */
-  libROMbase_FileName,           /*!< \brief Base filename for libROM file saving. */
   Volume_FileName,               /*!< \brief Flow variables output file. */
   Conv_FileName,                 /*!< \brief Convergence history output file. */
   Breakdown_FileName,            /*!< \brief Breakdown output file. */
@@ -5215,7 +5212,7 @@ public:
    * \brief Static or incremental toggle for POD basis generation type.
    * \return Type of POD generation type
    */
-  unsigned short GetKind_PODBasis(void) const { return POD_Basis_Gen; }
+  POD_KIND GetKind_PODBasis(void) const { return POD_Basis_Gen; }
   
   /*!
    * \brief Get the number of hyper-reduction nodes desired.
@@ -9372,24 +9369,6 @@ public:
    */
   short FindInterfaceMarker(unsigned short iInterface) const;
 
-  /*!
-   * \brief Get whether or not to save solution data to libROM.
-   * \return True if specified in config file.
-   */
-  bool GetSave_libROM(void) const {return libROM; }
-  
-  /*!
-   * \brief Get the name of the file for libROM to save.
-   * \return Filename prefix for libROM to save to (default: "su2").
-   */
-  string GetlibROMbase_FileName(void) const { return libROMbase_FileName; }
-  
-  /*!
-   * \brief Static or incremental toggle for POD basis generation type.
-   * \return Type of POD generation type
-   */
-  POD_KIND GetKind_PODBasis(void) const { return POD_Basis_Gen; }
-  
   /*!
    * \brief Get maximum number of POD basis dimensions (default: 100).
    * \return Maximum number of POD basis vectors.

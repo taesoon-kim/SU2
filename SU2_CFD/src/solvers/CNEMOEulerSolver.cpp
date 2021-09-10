@@ -481,12 +481,6 @@ void CNEMOEulerSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_con
   unsigned long iEdge, iPoint, jPoint;
   unsigned short iDim, iVar, jVar;
 
-  unsigned long iEdge, iPoint, jPoint;
-  unsigned short iDim, iVar, jVar;
-
-  unsigned long iEdge, iPoint, jPoint;
-  unsigned short iDim, iVar, jVar;
-
   /*--- Set booleans based on config settings ---*/
   const bool implicit         = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
   const bool muscl            = (config->GetMUSCL_Flow() && (iMesh == MESH_0));
@@ -2427,7 +2421,6 @@ void CNEMOEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solve
 
   bool implicit     = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool dynamic_grid = config->GetGrid_Movement();
-  bool implicit     = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
 
   su2double *Normal = new su2double[nDim];
