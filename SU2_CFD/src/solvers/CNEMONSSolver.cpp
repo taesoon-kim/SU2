@@ -261,6 +261,7 @@ void CNEMONSSolver::BC_HeatFluxNonCatalytic_Wall(CGeometry *geometry,
   const auto Marker_Tag = config->GetMarker_All_TagBound(val_marker);
   su2double Wall_HeatFlux = config->GetWall_HeatFlux(Marker_Tag)/config->GetHeat_Flux_Ref();
   bool implicit = false; //TODO
+
   /*--- Set "Proportional control" coefficient ---*/
   su2double pcontrol = 1.0;
 
@@ -1016,7 +1017,6 @@ void CNEMONSSolver::BC_Smoluchowski_Maxwell(CGeometry *geometry,
     for (auto iDim = 0u; iDim < nDim; iDim++) {
       Vector_Tangent_dT[iDim]   = Grad_PrimVar[T_INDEX][iDim] - dTn * UnitNormal[iDim];
       Vector_Tangent_dTve[iDim] = Grad_PrimVar[TVE_INDEX][iDim] - dTven * UnitNormal[iDim];
-
     }
 
     /*--- Calculate Heatflux tangent to surface ---*/
