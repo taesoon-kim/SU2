@@ -25,6 +25,10 @@
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined (__APPLE__)
+#include <Accelerate/Accelerate.h>
+#endif
+
 #include "../../include/solvers/CEulerSolver.hpp"
 #include "../../include/variables/CNSVariable.hpp"
 #include "../../../Common/include/toolboxes/geometry_toolbox.hpp"
@@ -40,6 +44,8 @@
 #include <sstream>
 #include <vector>
 #include <chrono>
+
+
 
 
 CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config,
