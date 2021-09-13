@@ -1939,12 +1939,6 @@ void CConfig::SetConfig_Options() {
   addStringOption("INITIAL_COORD_FILENAME", Init_Coord_FileName, string("NONE"));
   /*!\brief REF_SNAPSHOT_FILENAME\n DESCRIPTION: ROM reference snapshot input file. \ingroup Config*/
   addStringOption("REF_SNAPSHOT_FILENAME", Ref_Snapshot_FileName, string("ref_snapshot.csv"));
-  /*!\brief LIBROM_BASE_FILENAME \n DESCRIPTION: Output base file name for libROM (Reduced order modelling)  \ingroup Config*/
-  addStringOption("LIBROM_BASE_FILENAME", libROMbase_FileName, string("su2"));
-  /*!\brief SAVE_LIBROM \n DESCRIPTION: Flag for saving data with libROM. */
-  addBoolOption("SAVE_LIBROM", libROM, false);
-  /*!\brief BASIS_GENERSTION \n DESCRIPTION: Flag for saving data with libROM. */
-  addEnumOption("BASIS_GENERATION", POD_Basis_Gen, POD_Map, POD_KIND::STATIC);
   /*!\brief BASIS_GENERSTION \n DESCRIPTION: How many nodes to use for hyper-reduction. */
   addUnsignedLongOption("HYPER_NODES", nHyper_Nodes, 1000);
   /*!\brief BASIS_GENERSTION \n DESCRIPTION: How many modes to use from POD matrix. */

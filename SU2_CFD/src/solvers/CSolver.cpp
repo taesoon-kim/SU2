@@ -91,10 +91,6 @@ CSolver::CSolver(bool mesh_deform_mode) : System(mesh_deform_mode) {
   base_nodes         = nullptr;
   nOutputVariables   = 0;
   ResLinSolver       = 0.0;
-  
-  #ifdef HAVE_LIBROM
-    u_basis_generator  = NULL;
-  #endif
 
   /*--- Variable initialization to avoid valgrid warnings when not used. ---*/
 
@@ -191,10 +187,6 @@ CSolver::~CSolver(void) {
   delete [] Restart_Data;
 
   delete VerificationSolution;
-
-  #ifdef HAVE_LIBROM
-    if (u_basis_generator != NULL) u_basis_generator = nullptr;
-  #endif
 
 }
 
@@ -4222,112 +4214,6 @@ void CSolver::BasicLoadRestart(CGeometry *geometry, const CConfig *config, const
   }
 }
 
-#ifdef HAVE_LIBROM
-void CSolver::SavelibROM(CSolver** solver, CGeometry *geometry, CConfig *config, bool converged) {
-  
-  bool unsteady = ((config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_1ST) ||
-                  (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND) ||
-                  (config->GetTime_Marching() == TIME_MARCHING::TIME_STEPPING));
-  unsigned long iPoint, total_index;
-  unsigned short iVar;
-  
-  string filename = config->GetlibROMbase_FileName();
-  unsigned short pod_basis = config->GetKind_PODBasis(); //TODO: POD BASIS KIND
-  unsigned long TimeIter = config->GetTimeIter();
-  unsigned long nTimeIter = config->GetnTime_Iter();
-  int dim = int(nPointDomain * nVar);
-  bool incremental = false;
-  //bool StopCalc = ((TimeIter+1) == nTimeIter);
-
-  // Get solver nodes
-  CVariable* nodes = GetNodes();
-  
-  /*--- Define SVD basis generator ---*/
-  
-  CAROM::Options svd_options = CAROM::Options(dim, 2).setMaxBasisDimension(int(0.1*dim));
- 
-  if (!u_basis_generator) {
-    if (pod_basis == STATIC_POD) {
-      std::cout << "Creating static basis generator." << std::endl;
-    }
-    else {
-      std::cout << "Creating incremental basis generator." << std::endl;
-      svd_options.setIncrementalSVD(1.0e-2, config->GetDelta_UnstTimeND(),
-                                    1.0e-2, config->GetDelta_UnstTimeND()*100, true).setDebugMode(false);
-      incremental = true;
-    }
-    
-    u_basis_generator.reset(new CAROM::BasisGenerator(
-      svd_options, incremental,
-      filename));
-    
-    // Print nodes for each rank for now
-    std::cout << "nPointDomain: " << nPointDomain << " and nPoint: " << nPoint << std::endl;
-    
-    // Save mesh ordering
-    std::ofstream f;
-    f.open(filename + to_string(rank) + ".csv");
-        for (iPoint = 0; iPoint< nPointDomain; iPoint++) {
-          unsigned long globalPoint = geometry->nodes->GetGlobalIndex(iPoint);
-          auto Coord = geometry->nodes->GetCoord(iPoint);
-          f << Coord[0] << ", " << Coord[1] << ", " << globalPoint << "\n";
-        }
-    f.close();
-  }
-
-   if (unsteady) {
-      double* u = new double[nPointDomain*nVar];
-      for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
-         for (iVar = 0; iVar < nVar; iVar++) {
-            total_index = iPoint*nVar + iVar;
-            u[total_index] = nodes->GetSolution(iPoint,iVar);
-         }
-      }
-      
-      // give solution and time steps to libROM:
-      double dt = config->GetDelta_UnstTimeND();
-      double t =  config->GetCurrent_UnstTime();
-      std::cout << "Taking sample" << std::endl;
-      u_basis_generator->takeSample(u, t, dt);
-      // not implemented yet: u_basis_generator->computeNextSampleTime(u, rhs, t);
-      // bool u_samples = u_basis_generator->isNextSample(t);
-      delete[] u;
-   }
-   
-  /*--- End collection of data and save POD ---*/
-  
-   if (converged) {
-
-      if (!unsteady) {
-         double* u = new double[nPointDomain*nVar];
-         for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
-            for (iVar = 0; iVar < nVar; iVar++) {
-               total_index = iPoint*nVar + iVar;
-               u[total_index] = nodes->GetSolution(iPoint, iVar);
-            }
-         }
-         
-         // dt is different for each node, so just use a placeholder dt for now
-         double dt = base_nodes->GetDelta_Time(0);
-         double t = dt*TimeIter;
-         std::cout << "Taking sample" << std::endl;
-         u_basis_generator->takeSample(u, t, dt);
-
-         delete[] u;
-      }
-      
-      if (pod_basis == STATIC_POD) {
-         u_basis_generator->writeSnapshot();
-      }
-      std::cout << "Computing SVD" << std::endl;
-      int rom_dim = u_basis_generator->getSpatialBasis()->numColumns();
-      std::cout << "Basis dimension: " << rom_dim << std::endl;
-      u_basis_generator->endSamples();
-      std::cout << "ROM Sampling ended" << std::endl;
-   }
-}
-#endif
-
 
 void CSolver::SetROM_Variables(unsigned long nPoint, unsigned long nPointDomain, unsigned short nVar,
                                CGeometry *geometry, CConfig *config) {
@@ -4889,4 +4775,94 @@ void CSolver::CheckROMConvergence(CConfig *config, double ReducedRes) {
     }
   }
   SetRes_ROM(ReducedRes);
+}
+
+void CSolver::SavelibROM(CGeometry *geometry, CConfig *config, bool converged) {
+
+#if defined(HAVE_LIBROM) && !defined(CODI_FORWARD_TYPE) && !defined(CODI_REVERSE_TYPE)
+  const bool unsteady            = config->GetTime_Domain();
+  const string filename          = config->GetlibROMbase_FileName();
+  const unsigned long TimeIter   = config->GetTimeIter();
+  const unsigned long nTimeIter  = config->GetnTime_Iter();
+  const int maxBasisDim          = config->GetMax_BasisDim();
+  const int save_freq            = config->GetRom_SaveFreq();
+  int dim = int(nPointDomain * nVar);
+  bool incremental = false;
+
+  if (!u_basis_generator) {
+
+    /*--- Define SVD basis generator ---*/
+    auto timesteps = static_cast<int>(nTimeIter - TimeIter);
+    CAROM::Options svd_options = CAROM::Options(dim, timesteps, -1,
+                                                false, true).setMaxBasisDimension(int(maxBasisDim));
+
+    if (config->GetKind_PODBasis() == POD_KIND::STATIC) {
+      if (rank == MASTER_NODE) std::cout << "Creating static basis generator." << std::endl;
+
+      if (unsteady) {
+        if (rank == MASTER_NODE) std::cout << "Incremental basis generator recommended for unsteady simulations." << std::endl;
+      }
+    }
+    else {
+      if (rank == MASTER_NODE) std::cout << "Creating incremental basis generator." << std::endl;
+
+      svd_options.setIncrementalSVD(1.0e-3, config->GetDelta_UnstTime(),
+                                    1.0e-2, config->GetDelta_UnstTime()*nTimeIter, true).setDebugMode(false);
+      incremental = true;
+    }
+
+    u_basis_generator.reset(new CAROM::BasisGenerator(
+      svd_options, incremental,
+      filename));
+
+    // Save mesh ordering
+    std::ofstream f;
+    f.open(filename + "_mesh_" + to_string(rank) + ".csv");
+      for (unsigned long iPoint = 0; iPoint < nPointDomain; iPoint++) {
+        unsigned long globalPoint = geometry->nodes->GetGlobalIndex(iPoint);
+        auto Coord = geometry->nodes->GetCoord(iPoint);
+
+        for (unsigned long iDim = 0; iDim < nDim; iDim++) {
+          f << Coord[iDim] << ", ";
+        }
+        f << globalPoint << "\n";
+      }
+    f.close();
+  }
+
+  if (unsteady && (TimeIter % save_freq == 0)) {
+    // give solution and time steps to libROM:
+    su2double dt = config->GetDelta_UnstTime();
+    su2double t =  config->GetCurrent_UnstTime();
+    u_basis_generator->takeSample(const_cast<su2double*>(base_nodes->GetSolution().data()), t, dt);
+  }
+
+  /*--- End collection of data and save POD ---*/
+
+  if (converged) {
+
+    if (!unsteady) {
+       // dt is different for each node, so just use a placeholder dt
+       su2double dt = base_nodes->GetDelta_Time(0);
+       su2double t = dt*TimeIter;
+       u_basis_generator->takeSample(const_cast<su2double*>(base_nodes->GetSolution().data()), t, dt);
+    }
+
+    if (config->GetKind_PODBasis() == POD_KIND::STATIC) {
+      u_basis_generator->writeSnapshot();
+    }
+
+    if (rank == MASTER_NODE) std::cout << "Computing SVD" << std::endl;
+    int rom_dim = u_basis_generator->getSpatialBasis()->numColumns();
+
+    if (rank == MASTER_NODE) std::cout << "Basis dimension: " << rom_dim << std::endl;
+    u_basis_generator->endSamples();
+
+    if (rank == MASTER_NODE) std::cout << "ROM Sampling ended" << std::endl;
+  }
+
+#else
+  SU2_MPI::Error("SU2 was not compiled with libROM support.", CURRENT_FUNCTION);
+#endif
+  
 }

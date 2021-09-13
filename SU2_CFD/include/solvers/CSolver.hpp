@@ -212,10 +212,6 @@ public:
   string* OutputHeadingNames;               /*!< \brief vector of strings to store the headings for the exra variables */
 
   CVerificationSolution *VerificationSolution; /*!< \brief Verification solution class used within the solver. */
-  
-  #ifdef HAVE_LIBROM
-    std::unique_ptr<CAROM::BasisGenerator> u_basis_generator;
-  #endif
 
   vector<string> fields;
 
@@ -1457,17 +1453,6 @@ public:
   inline virtual void ROM_Iteration(CGeometry *geometry,
                                     CSolver **solver_container,
                                     CConfig *config) { }
-  
-#ifdef HAVE_LIBROM
-  /*!
-   * \brief Save snapshot or POD data using libROM
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] solver - Container vector with all the solutions.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] converged - Whether or not solution has converged.
-  */
-  void SavelibROM(CSolver** solver, CGeometry *geometry, CConfig *config, bool converged);
-#endif
   
   /*!
    * \brief Set up ROM-specific variables.
