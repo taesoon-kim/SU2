@@ -4215,8 +4215,7 @@ void CSolver::BasicLoadRestart(CGeometry *geometry, const CConfig *config, const
 }
 
 
-void CSolver::SetROM_Variables(unsigned long nPoint, unsigned long nPointDomain, unsigned short nVar,
-                               CGeometry *geometry, CConfig *config) {
+void CSolver::SetROM_Variables(CGeometry *geometry, CConfig *config) {
   // Explanation of certain ROM-specific variables:
   // TrialBasis   ...POD-built reduced basis, Phi
   // GenCoordsY   ...generalized coordinate vector, y
@@ -4507,8 +4506,8 @@ void CSolver::Mask_Selection(CGeometry *geometry, CConfig *config) {
     }
   }
   
-  //unsigned long nsnaps = Phi.size();
-  unsigned long nsnaps = 10;
+  unsigned long nsnaps = Phi.size();
+  //unsigned long nsnaps = 10;
   unsigned long i, j, k, ii, imask, iVar, inode, ivec, nodewithMax;
   
   std::vector<double> PhiNodes;
@@ -4638,7 +4637,7 @@ void CSolver::Mask_Selection(CGeometry *geometry, CConfig *config) {
   
   if (!read_mask_from_file) {
   ofstream fs;
-  std::string fname = "masked_nodes_airfoil_"+to_string(desired_nodes)+".csv";
+  std::string fname = "masked_nodes_airfoil_allphi_"+to_string(desired_nodes)+".csv";
   fs.open(fname);
   for(int i=0; i < (int)Mask.size(); i++){
     fs << Mask[i] << "," ;
@@ -4682,15 +4681,6 @@ void CSolver::FindMaskedEdges(CGeometry *geometry, CConfig *config) {
   }
   
   unsigned long desired_nodes = config->GetnHyper_Nodes();
-  ofstream fs;
-  std::string fname = "masked_nodes_neighs_"+to_string(desired_nodes)+".csv";
-  fs.open(fname);
-  set <unsigned long> :: iterator itr;
-  for (itr = MaskNeighbors.begin(); itr != MaskNeighbors.end(); ++itr){
-    fs << *itr << "," ;
-  }
-  fs << "\n";
-  fs.close();
   
   /*--- Include neighbors of neighbors for viscous part of residual ---*/
   
@@ -4721,23 +4711,23 @@ void CSolver::FindMaskedEdges(CGeometry *geometry, CConfig *config) {
        
   }
   
-  //ofstream fs;
-  //std::string fname = "masked_nodes_neighs.csv";
+  ofstream fs;
+  std::string fname = "masked_nodes_neighs_allphi_"+to_string(desired_nodes)+".csv";
   fs.open(fname);
-  //set <unsigned long> :: iterator itr;
+  set <unsigned long> :: iterator itr;
   for (itr = MaskNeighbors.begin(); itr != MaskNeighbors.end(); ++itr){
     fs << *itr << "," ;
   }
   fs << "\n";
   fs.close();
   
-  std::string fname2 = "masked_nodes_edges.csv";
-  fs.open(fname2);
-  for (unsigned long i : Edge_masked) {
-    fs << i << "," ;
-  }
-  fs << "\n";
-  fs.close();
+  //std::string fname2 = "masked_nodes_edges.csv";
+  //fs.open(fname2);
+  //for (unsigned long i : Edge_masked) {
+  //  fs << i << "," ;
+  //}
+  //fs << "\n";
+  //fs.close();
   
 }
 

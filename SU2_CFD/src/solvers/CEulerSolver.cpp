@@ -337,16 +337,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config,
       cout << "Warning. The original solution contains " << counter_global << " points that are not physical." << endl;
   }
 
-  /*---- Initialize ROM specific variables. ----*/
-  bool rom = config->GetReduced_Model();
-  if (rom && (TrialBasis.size() == 0) && (MGLevel == MESH_0)) {
-    if (rank == MASTER_NODE)
-      cout << "Selecting nodes for hyper-reduction (ROM)." << endl;
-    Mask_Selection(geometry, config);
-    FindMaskedEdges(geometry, config);
-    SetROM_Variables(nPoint, nPointDomain, nVar, geometry, config);
-  }
-
   /*--- Initial comms. ---*/
 
   CommunicateInitialState(geometry, config);
