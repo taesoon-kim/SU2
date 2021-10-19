@@ -723,7 +723,6 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
                                                 unsigned short nVar_Restart) {
 
   /*--- Restart the solution from file information ---*/
-
   unsigned short iDim, iVar, iMesh;
   unsigned long iPoint, index, iChildren, Point_Fine;
   unsigned short turb_model = config->GetKind_Turb_Model();
