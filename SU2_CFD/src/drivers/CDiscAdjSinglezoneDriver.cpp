@@ -61,7 +61,6 @@ CDiscAdjSinglezoneDriver::CDiscAdjSinglezoneDriver(char* confFile,
 
   case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
   case DISC_ADJ_INC_EULER: case DISC_ADJ_INC_NAVIER_STOKES: case DISC_ADJ_INC_RANS:
-  case DISC_ADJ_NEMO_EULER: case DISC_ADJ_NEMO_NAVIER_STOKES:
 
     if (rank == MASTER_NODE)
       cout << "Direct iteration: Euler/Navier-Stokes/RANS equation." << endl;
@@ -76,6 +75,22 @@ CDiscAdjSinglezoneDriver::CDiscAdjSinglezoneDriver(char* confFile,
       direct_output = COutputFactory::CreateOutput(EULER, config, nDim);
     }
     else { direct_output =  COutputFactory::CreateOutput(INC_EULER, config, nDim); }
+
+    MainVariables = RECORDING::SOLUTION_VARIABLES;
+    if (config->GetDeform_Mesh()) {
+      SecondaryVariables = RECORDING::MESH_DEFORM;
+    }
+    else { SecondaryVariables = RECORDING::MESH_COORDS; }
+    MainSolver = ADJFLOW_SOL;
+    break;
+
+  case DISC_ADJ_NEMO_EULER: case DISC_ADJ_NEMO_NAVIER_STOKES:
+
+    if (rank == MASTER_NODE)
+      cout << "Direct iteration: Two-temperature Euler/Navier-Stokes/RANS equation." << endl;
+
+    direct_iteration = CIterationFactory::CreateIteration(NEMO_EULER, config);
+    direct_output = COutputFactory::CreateOutput(NEMO_EULER, config, nDim);
 
     MainVariables = RECORDING::SOLUTION_VARIABLES;
     if (config->GetDeform_Mesh()) {
