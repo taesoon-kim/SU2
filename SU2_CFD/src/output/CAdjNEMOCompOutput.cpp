@@ -34,7 +34,7 @@
 CAdjNEMOCompOutput::CAdjNEMOCompOutput(CConfig *config, unsigned short nDim) : COutput(config, nDim, false) {
 
   turb_model = config->GetKind_Turb_Model();
-  nSpecies   = config->GetnSpecies();
+  unsigned short nSpecies   = config->GetnSpecies();
 
   frozen_visc = (config->GetFrozen_Visc_Disc() && !cont_adj) || (config->GetFrozen_Visc_Cont() && cont_adj);
 
@@ -51,7 +51,7 @@ CAdjNEMOCompOutput::CAdjNEMOCompOutput(CConfig *config, unsigned short nDim) : C
     if (config->GetTime_Domain()) requestedScreenFields.emplace_back("TIME_ITER");
     if (multiZone) requestedScreenFields.emplace_back("OUTER_ITER");
     requestedScreenFields.emplace_back("INNER_ITER");
-    for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+    for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
       requestedScreenFields.emplace_back("RMS_ADJ_DENSITY_" + std::to_string(iSpecies));
     requestedScreenFields.emplace_back("RMS_ADJ_DENSITY");
     requestedScreenFields.emplace_back("RMS_ADJ_MOMENTUM-X");
@@ -102,8 +102,11 @@ CAdjNEMOCompOutput::~CAdjNEMOCompOutput(void) {}
 
 void CAdjNEMOCompOutput::SetHistoryOutputFields(CConfig *config){
 
+  unsigned short nSpecies = config->GetnSpecies();
+
   /// BEGIN_GROUP: RMS_RES, DESCRIPTION: The root-mean-square residuals of the SOLUTION variables.
   /// DESCRIPTION: Root-mean square residual of the adjoint density.
+  for (auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     AddHistoryOutput("RMS_ADJ_DENSITY_" + std::to_string(iSpecies), "rms[A_Rho_" + std::to_string(iSpecies) + "]",   ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the species adjoint density " + std::to_string(iSpecies) + ".", HistoryFieldType::RESIDUAL);
   /// DESCRIPTION: Root-mean square residual of the adjoint momentum x-component.
   AddHistoryOutput("RMS_ADJ_MOMENTUM-X", "rms[A_RhoU]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint momentum x-component.", HistoryFieldType::RESIDUAL);
@@ -227,7 +230,7 @@ void CAdjNEMOCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, C
 
   unsigned short nSpecies = config->GetnSpecies();
 
-  for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+  for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     SetHistoryOutputValue("RMS_ADJ_DENSITY_" + std::to_string(iSpecies), log10(adjflow_solver->GetRes_RMS(iSpecies)));
 
   SetHistoryOutputValue("RMS_ADJ_MOMENTUM-X", log10(adjflow_solver->GetRes_RMS(nSpecies)));
@@ -322,6 +325,8 @@ void CAdjNEMOCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, C
 
 void CAdjNEMOCompOutput::SetVolumeOutputFields(CConfig *config){
 
+  unsigned short nSpecies = config->GetnSpecies();
+
   // Grid coordinates
   AddVolumeOutput("COORD-X", "x", "COORDINATES", "x-component of the coordinate vector");
   AddVolumeOutput("COORD-Y", "y", "COORDINATES", "y-component of the coordinate vector");
@@ -330,7 +335,7 @@ void CAdjNEMOCompOutput::SetVolumeOutputFields(CConfig *config){
 
   /// BEGIN_GROUP: SOLUTION, DESCRIPTION: The SOLUTION variables of the adjoint solver.
   /// DESCRIPTION: Adjoint density.
-  for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+  for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     AddVolumeOutput("ADJ_DENSITY_" + std::to_string(iSpecies),  "Density_" + std::to_string(iSpecies),  "SOLUTION", "Density_"  + std::to_string(iSpecies));
   /// DESCRIPTION: Adjoint momentum x-component.
   AddVolumeOutput("ADJ_MOMENTUM-X", "Adjoint_Momentum_x", "SOLUTION", "x-component of the adjoint momentum vector");
@@ -362,7 +367,7 @@ void CAdjNEMOCompOutput::SetVolumeOutputFields(CConfig *config){
 
   /// BEGIN_GROUP: RESIDUAL, DESCRIPTION: Residuals of the SOLUTION variables.
   /// DESCRIPTION: Residual of the adjoint density.
-  for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+  for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     AddVolumeOutput("RES_ADJ_DENSITY_" + std::to_string(iSpecies), "Residual_Density_" + std::to_string(iSpecies), "RESIDUAL", "Residual of species density " + std::to_string(iSpecies));
   /// DESCRIPTION: Residual of the adjoint momentum x-component.
   AddVolumeOutput("RES_ADJ_MOMENTUM-X", "Residual_Adjoint_Momentum_x", "RESIDUAL", "Residual of the adjoint x-momentum");
@@ -423,7 +428,7 @@ void CAdjNEMOCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CS
   if (nDim == 3)
     SetVolumeOutputValue("COORD-Z", iPoint, Node_Geo->GetCoord(iPoint, 2));
 
-  for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+  for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     SetVolumeOutputValue("ADJ_DENSITY_" + std::to_string(iSpecies), iPoint, Node_AdjFlow->GetSolution(iPoint, iSpecies));
 
   SetVolumeOutputValue("ADJ_MOMENTUM-X", iPoint, Node_AdjFlow->GetSolution(iPoint, nSpecies));
@@ -454,7 +459,7 @@ void CAdjNEMOCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CS
   }
 
   // Residuals
-  for(iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+  for(auto iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     SetVolumeOutputValue("RES_ADJ_DENSITY_" + std::to_string(iSpecies), iPoint, solver[FLOW_SOL]->LinSysRes(iPoint, iSpecies));
 
   SetVolumeOutputValue("RES_ADJ_MOMENTUM-X", iPoint, Node_AdjFlow->GetSolution(iPoint, nSpecies) - Node_AdjFlow->GetSolution_Old(iPoint, nSpecies));
