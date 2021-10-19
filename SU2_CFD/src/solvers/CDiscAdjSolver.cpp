@@ -175,14 +175,17 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
   if((config->GetKind_Regime() == ENUM_REGIME::COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && !config->GetBoolTurbomachinery())) {
 
-    su2double Velocity_Ref = config->GetVelocity_Ref();
-    Alpha                  = config->GetAoA()*PI_NUMBER/180.0;
-    Beta                   = config->GetAoS()*PI_NUMBER/180.0;
-    Mach                   = config->GetMach();
-    Pressure               = config->GetPressure_FreeStreamND();
-    Temperature            = config->GetTemperature_FreeStreamND();
+    su2double Velocity_Ref   = config->GetVelocity_Ref();
+    Alpha                    = config->GetAoA()*PI_NUMBER/180.0;
+    Beta                     = config->GetAoS()*PI_NUMBER/180.0;
+    Mach                     = config->GetMach();
+    Pressure                 = config->GetPressure_FreeStreamND();
+    Temperature              = config->GetTemperature_FreeStreamND();
+    su2double Temperature_ve = config->GetTemperature_ve_FreeStream();
+    su2double *MassFrac      = config->GetMassFrac_FreeStream();
 
     su2double SoundSpeed = 0.0;
+    su2double *Mvec_Inf;
 
     if (nDim == 2) { SoundSpeed = config->GetVelocity_FreeStreamND()[0]*Velocity_Ref/(cos(Alpha)*Mach); }
     if (nDim == 3) { SoundSpeed = config->GetVelocity_FreeStreamND()[0]*Velocity_Ref/(cos(Alpha)*cos(Beta)*Mach); }
@@ -191,26 +194,36 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
       AD::RegisterInput(Mach);
       AD::RegisterInput(Alpha);
       AD::RegisterInput(Temperature);
+      AD::RegisterInput(Temperature_ve);
       AD::RegisterInput(Pressure);
     }
 
     /*--- Recompute the free stream velocity ---*/
 
+    su2double Mvec_Inf[MAXNDIM];
     if (nDim == 2) {
       config->GetVelocity_FreeStreamND()[0] = cos(Alpha)*Mach*SoundSpeed/Velocity_Ref;
       config->GetVelocity_FreeStreamND()[1] = sin(Alpha)*Mach*SoundSpeed/Velocity_Ref;
+
+      Mvec_Inf[0] = cos(Alpha)*Mach;
+      Mvec_Inf[1] = sin(Alpha)*Mach;
     }
     if (nDim == 3) {
       config->GetVelocity_FreeStreamND()[0] = cos(Alpha)*cos(Beta)*Mach*SoundSpeed/Velocity_Ref;
       config->GetVelocity_FreeStreamND()[1] = sin(Beta)*Mach*SoundSpeed/Velocity_Ref;
       config->GetVelocity_FreeStreamND()[2] = sin(Alpha)*cos(Beta)*Mach*SoundSpeed/Velocity_Ref;
+
+      Mvec_Inf[0] = cos(Alpha)*cos(Beta)*Mach;
+      Mvec_Inf[1] = sin(Beta)*Mach;
+      Mvec_Inf[2] = sin(Alpha)*cos(Beta)*Mach;
     }
 
     config->SetTemperature_FreeStreamND(Temperature);
     direct_solver->SetTemperature_Inf(Temperature);
     config->SetPressure_FreeStreamND(Pressure);
     direct_solver->SetPressure_Inf(Pressure);
-
+    direct_solver->ResetNodeInfty(Pressure, MassFrac, Mvec_Inf, Temperature, Temperature_ve,
+                                  config);
   }
 
   if ((config->GetKind_Regime() == ENUM_REGIME::COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolTurbomachinery()){

@@ -2451,3 +2451,15 @@ void CNEMOEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solve
   delete [] Normal;
 
 }
+
+void CNEMOEulerSolver::ResetNodeInfty(su2double pressure_inf, su2double *massfrac_inf, su2double *mvec_inf, su2double temperature_inf,
+                                      su2double temperature_ve_inf, CConfig *config){
+  su2double check_infty;
+  if (node_infty != nullptr) delete node_infty;
+
+  node_infty = new CNEMOEulerVariable(pressure_inf, massfrac_inf, mvec_inf, temperature_inf,
+                                      temperature_ve_inf, 1, nDim, nVar,
+                                      nPrimVar, nPrimVarGrad, config);
+
+  check_infty = node_infty->SetPrimVar_Compressible(0,config);
+}
