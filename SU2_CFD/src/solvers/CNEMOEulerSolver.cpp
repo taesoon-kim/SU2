@@ -2457,9 +2457,11 @@ void CNEMOEulerSolver::ResetNodeInfty(su2double pressure_inf, su2double *massfra
   su2double check_infty;
   if (node_infty != nullptr) delete node_infty;
 
+  CFluidModel *FluidModel = solver_container[FLOW_SOL]->GetFluidModel();
+
   node_infty = new CNEMOEulerVariable(pressure_inf, massfrac_inf, mvec_inf, temperature_inf,
                                       temperature_ve_inf, 1, nDim, nVar,
-                                      nPrimVar, nPrimVarGrad, config);
+                                      nPrimVar, nPrimVarGrad, config, FluidModel);
 
   check_infty = node_infty->SetPrimVar_Compressible(0,config);
 }
