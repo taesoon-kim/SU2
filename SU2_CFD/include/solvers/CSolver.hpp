@@ -3413,6 +3413,12 @@ public:
                                           unsigned long TimeIter) { }
 
   /*!
+   * \brief Reset Node Infty for discrete adjoint
+   */
+  virtual void ResetNodeInfty(su2double pressure_inf, const su2double *massfrac_inf, su2double *mvec_inf, su2double temperature_inf,
+                              su2double temperature_ve_inf, CConfig *config) { }
+
+  /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the problem.

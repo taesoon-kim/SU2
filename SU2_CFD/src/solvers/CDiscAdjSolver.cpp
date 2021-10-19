@@ -182,10 +182,9 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
     Pressure                 = config->GetPressure_FreeStreamND();
     Temperature              = config->GetTemperature_FreeStreamND();
     su2double Temperature_ve = config->GetTemperature_ve_FreeStream();
-    su2double *MassFrac      = config->GetMassFrac_FreeStream();
+    const su2double *MassFrac = config->GetGas_Composition();
 
     su2double SoundSpeed = 0.0;
-    su2double *Mvec_Inf;
 
     if (nDim == 2) { SoundSpeed = config->GetVelocity_FreeStreamND()[0]*Velocity_Ref/(cos(Alpha)*Mach); }
     if (nDim == 3) { SoundSpeed = config->GetVelocity_FreeStreamND()[0]*Velocity_Ref/(cos(Alpha)*cos(Beta)*Mach); }
