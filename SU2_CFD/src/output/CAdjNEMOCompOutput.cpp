@@ -36,7 +36,7 @@ CAdjNEMOCompOutput::CAdjNEMOCompOutput(CConfig *config, unsigned short nDim) : C
   turb_model = config->GetKind_Turb_Model();
   unsigned short nSpecies   = config->GetnSpecies();
 
-  frozen_visc = (config->GetFrozen_Visc_Disc() && !cont_adj) || (config->GetFrozen_Visc_Cont() && cont_adj);
+  frozen_visc = (config->GetFrozen_Visc_Disc());
 
   /*--- Set the default history fields if nothing is set in the config file ---*/
 

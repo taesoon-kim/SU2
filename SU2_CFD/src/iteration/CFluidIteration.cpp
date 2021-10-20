@@ -78,6 +78,7 @@ void CFluidIteration::Iterate(COutput* output, CIntegration**** integration, CGe
     case INC_EULER:
     case DISC_ADJ_INC_EULER:
     case NEMO_EULER:
+    case DISC_ADJ_NEMO_EULER:
       config[val_iZone]->SetGlobalParam(EULER, RUNTIME_FLOW_SYS);
       break;
 
