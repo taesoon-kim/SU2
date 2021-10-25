@@ -503,8 +503,7 @@ void CNEMOTurbSASolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_conta
 
     /*--- Allocate the value at the infinity ---*/
 
-    auto V_infty = solver_container[FLOW_SOL]->GetNode_Infty()->GetPrimitive(0);
-    auto U_infty = solver_container[FLOW_SOL]->GetNode_Infty()->GetSolution(0);
+    auto V_infty = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
 
     /*--- Check if the node belongs to the domain (i.e, not a halo node) ---*/
 
@@ -513,16 +512,14 @@ void CNEMOTurbSASolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_conta
       /*--- Retrieve solution at the farfield boundary node ---*/
 
       auto V_domain = solver_container[FLOW_SOL]->GetNodes()->GetPrimitive(iPoint);
-      auto U_domain = solver_container[FLOW_SOL]->GetNodes()->GetSolution(iPoint);
-
+    
       /*--- Grid Movement ---*/
 
       if (dynamic_grid)
         conv_numerics->SetGridVel(geometry->nodes->GetGridVel(iPoint), geometry->nodes->GetGridVel(iPoint));
 
       conv_numerics->SetPrimitive(V_domain, V_infty);
-      conv_numerics->SetConservative(U_domain, U_infty);
-
+    
       /*--- Set turbulent variable at the wall, and at infinity ---*/
 
       conv_numerics->SetTurbVar(nodes->GetSolution(iPoint), Solution_Inf);

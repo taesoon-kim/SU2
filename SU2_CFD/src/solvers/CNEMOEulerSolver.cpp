@@ -1542,12 +1542,22 @@ void CNEMOEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_contai
   unsigned short iDim;
   unsigned long iVertex, iPoint, Point_Normal;
 
-  su2double *V_infty, *V_domain, *U_domain,*U_infty;
+  su2double *V_infty, *V_domain;
 
   /*--- Set booleans from configuration parameters ---*/
   //bool implicit = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool viscous  = config->GetViscous();
-  //bool tkeNeeded = (config->GetKind_Turb_Model() == SST) || (config->GetKind_Turb_Model() == SST_SUST);
+  bool tkeNeeded = (config->GetKind_Turb_Model() == SST) || (config->GetKind_Turb_Model() == SST_SUST);
+
+  unsigned short T_INDEX       = nodes->GetTIndex();
+  unsigned short TVE_INDEX     = nodes->GetTveIndex();
+  unsigned short VEL_INDEX     = nodes->GetVelIndex();
+  unsigned short P_INDEX       = nodes->GetPIndex();
+  unsigned short RHO_INDEX     = nodes->GetRhoIndex();
+  unsigned short H_INDEX       = nodes->GetHIndex();
+  unsigned short A_INDEX       = nodes->GetAIndex();
+  unsigned short RHOCVTR_INDEX = nodes->GetRhoCvtrIndex();
+  unsigned short RHOCVVE_INDEX = nodes->GetRhoCvveIndex();
 
   /*--- Allocate arrays ---*/
   su2double *Normal = new su2double[nDim];
@@ -1555,6 +1565,9 @@ void CNEMOEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_contai
   /*--- Loop over all the vertices on this boundary (val_marker) ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
     iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+    /*--- Allocate the value at the infinity ---*/
+    V_infty = GetCharacPrimVar(val_marker, iVertex);
 
     /*--- Check if the node belongs to the domain (i.e, not a halo node) ---*/
     if (geometry->nodes->GetDomain(iPoint)) {
@@ -1568,13 +1581,28 @@ void CNEMOEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_contai
       conv_numerics->SetNormal(Normal);
 
       /*--- Retrieve solution at the boundary node & free-stream ---*/
-      U_domain = nodes->GetSolution(iPoint);
       V_domain = nodes->GetPrimitive(iPoint);
-      U_infty  = node_infty->GetSolution(0);
-      V_infty  = node_infty->GetPrimitive(0);
+      auto& V_temp = node_infty->GetPrimitive(0);
+
+      vector<su2double> rhos;
+      rhos.resize(nSpecies,0.0);
+      
+      for (auto iSpecies = 0; iSpecies<nSpecies; iSpecies++)
+        V_infty[iSpecies] = V_temp[iSpecies];
+      V_infty[T_INDEX]=V_temp[T_INDEX];
+      V_infty[TVE_INDEX]=V_temp[TVE_INDEX];
+
+      for (auto iDim; iDim < nDim; iDim++)
+        V_infty[VEL_INDEX+iDim]=V_temp[iDim];
+
+      V_infty[P_INDEX]=V_temp[P_INDEX];
+      V_infty[RHO_INDEX]=V_temp[RHO_INDEX];
+      V_infty[H_INDEX]=V_temp[H_INDEX];
+      V_infty[A_INDEX]=V_temp[A_INDEX];
+      V_infty[RHOCVTR_INDEX]=V_temp[RHOCVTR_INDEX];
+      V_infty[RHOCVVE_INDEX]=V_temp[RHOCVVE_INDEX];
 
       /*--- Pass conserved & primitive variables to CNumerics ---*/
-      conv_numerics->SetConservative(U_domain, U_infty);
       conv_numerics->SetPrimitive(V_domain, V_infty);
 
       /*--- Pass supplementary information to CNumerics ---*/
@@ -1604,10 +1632,6 @@ void CNEMOEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_contai
         visc_numerics->SetNormal(Normal);
 
         /*--- Primitive variables, and gradient ---*/
-        visc_numerics->SetConservative(nodes->GetSolution(iPoint),
-                                       node_infty->GetSolution(0) );
-        visc_numerics->SetConsVarGradient(nodes->GetGradient(iPoint),
-                                          node_infty->GetGradient(0) );
         visc_numerics->SetPrimitive(nodes->GetPrimitive(iPoint),
                                     node_infty->GetPrimitive(0) );
         visc_numerics->SetPrimVarGradient(nodes->GetGradient_Primitive(iPoint),
