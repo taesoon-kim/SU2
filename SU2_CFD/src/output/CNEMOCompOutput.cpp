@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * \file CNEMOCompOutput.cpp
  * \brief Main subroutines for compressible flow output
  * \author W. Maier, R. Sanchez
@@ -271,6 +271,19 @@ void CNEMOCompOutput::SetHistoryOutputFields(CConfig *config){
     AddHistoryOutput("DEFORM_RESIDUAL", "DeformRes", ScreenOutputFormat::FIXED, "DEFORM", "Residual of the linear solver for the mesh deformation");
   }
 
+  
+  if (config->GetReduced_Model()) {
+    /// BEGIN_GROUP: ROM variables.
+    ///   /// DESCRIPTION: Root-mean square residual of the reduced coordinates.
+    AddHistoryOutput("NORM_ROM",    "norm[r_hat]",  ScreenOutputFormat::SCIENTIFIC, "RMS_RES", "Norm residual of the reduced  variables (rom).", HistoryFieldType::RESIDUAL);
+    ///   /// DESCRIPTION: Root-mean square residual of the density.
+    AddHistoryOutput("ROM_COORD_1",    "ROM_Coord_1",  ScreenOutputFormat::SCIENTIFIC, "ROM_COORD", "Value of the reduced coordinate  (rom).", HistoryFieldType::RESIDUAL);
+    ///   /// DESCRIPTION: Root-mean square residual of the density.
+    //AddHistoryOutput("ROM_COORD-2",    "norm[r_hat]",  ScreenOutputFormat::SCIENTIFIC, "ROM_COORD", "Norm residual of the reduced   variables (rom).", HistoryFieldType::RESIDUAL);
+    ///   /// DESCRIPTION: Root-mean square residual of the density.
+    //AddHistoryOutput("ROM_COORD-3",    "norm[r_hat]",  ScreenOutputFormat::SCIENTIFIC, "ROM_COORD", "Norm residual of the reduced   variables (rom).", HistoryFieldType::RESIDUAL);
+  }
+  
   /*--- Add analyze surface history fields --- */
 
   AddAnalyzeSurfaceOutput(config);
@@ -588,6 +601,8 @@ void CNEMOCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
     SetHistoryOutputValue("RMS_ENERGY",     log10(NEMO_solver->GetRes_RMS(nSpecies+3)));
     SetHistoryOutputValue("RMS_ENERGY_VE",  log10(NEMO_solver->GetRes_RMS(nSpecies+4)));
   }
+  if (config->GetReduced_Model())
+    SetHistoryOutputValue("NORM_ROM", NEMO_solver->GetRes_ROM());
 
   switch(turb_model){
   case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:

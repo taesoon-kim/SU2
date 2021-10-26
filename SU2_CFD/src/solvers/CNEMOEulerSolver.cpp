@@ -1008,8 +1008,6 @@ void CNEMOEulerSolver::ROM_Iteration(CGeometry *geometry, CSolver **solver_conta
   vector<double> r(m,0.0);
   int index = 0;
   
-  /*--- Add pseudotime term to Jacobian. ---*/
-  // TODO: Does ROM need this?
   
   SU2_OMP_FOR_(schedule(static,omp_chunk_size) SU2_NOWAIT)
   //for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
@@ -1048,13 +1046,25 @@ void CNEMOEulerSolver::ROM_Iteration(CGeometry *geometry, CSolver **solver_conta
       index++;
     }
   }
-  
-  if (InnerIter == 0) {
-    // initialize Weights vector
-    for (iVar = 0; iVar < nVar; iVar++) {
-      Weights.push_back(0.0);
-    }
+  END_SU2_OMP_FOR
+  SU2_OMP_CRITICAL
+  for (unsigned short iVar = 0; iVar < nVar; iVar++) {
+    Residual_RMS[iVar] += resRMS[iVar];
+    AddRes_Max(iVar, resMax[iVar], geometry->nodes->GetGlobalIndex(idxMax[iVar]), coordMax[iVar]);
   }
+  END_SU2_OMP_CRITICAL
+  SU2_OMP_BARRIER
+
+  /*--- Compute the root mean square residual ---*/
+  SetResidual_RMS(geometry, config);
+
+
+  //if (InnerIter == 0) {
+  //  // initialize Weights vector
+  //  for (iVar = 0; iVar < nVar; iVar++) {
+  //    Weights.push_back(0.0);
+  //  }
+  //}
   
   
   ofstream fs;
@@ -1306,18 +1316,6 @@ void CNEMOEulerSolver::ROM_Iteration(CGeometry *geometry, CSolver **solver_conta
   
   InitiateComms(geometry, config, SOLUTION);
   CompleteComms(geometry, config, SOLUTION);
-  
-  SU2_OMP_MASTER
-  {
-    /*--- Compute the root mean square residual ---*/
-  
-    SetResidual_RMS(geometry, config);
-  
-    /*--- For verification cases, compute the global error metrics. ---*/
-  
-    ComputeVerificationError(geometry, config);
-  }
-  SU2_OMP_BARRIER
   
 }
 

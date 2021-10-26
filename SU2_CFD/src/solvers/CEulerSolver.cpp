@@ -2431,13 +2431,6 @@ void CEulerSolver::ClassicalRK4_Iteration(CGeometry *geometry, CSolver **solver_
 
 void CEulerSolver::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
 
-  bool rom = config->GetReduced_Model();
-  
-  if (rom) {
-    ROM_Iteration(geometry, solver_container, config);
-    return;
-  }
-
   Explicit_Iteration<EULER_EXPLICIT>(geometry, solver_container, config, 0);
 }
 

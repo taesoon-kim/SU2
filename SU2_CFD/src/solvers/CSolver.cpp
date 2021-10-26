@@ -4282,8 +4282,8 @@ void CSolver::SetROM_Variables(CGeometry *geometry, CConfig *config) {
         ref_sol[s] = stod(field);
         nodes->Set_RefSolution(iPoint, iVar, ref_sol[s]);
         s++;
-        if (s % 4 == 0) iPoint++;
-        if (iVar == 3) iVar = 0; else iVar++;
+        if (s % nVar == 0) iPoint++;
+        if (iVar == nVar-1) iVar = 0; else iVar++;
       }
     }
   }
@@ -4307,8 +4307,8 @@ void CSolver::SetROM_Variables(CGeometry *geometry, CConfig *config) {
         nodes->SetSolution(iPoint, iVar, init_sol[iVar + iPoint*nVar]);
         nodes->SetSolution_Old(iPoint, iVar, init_sol[iVar + iPoint*nVar]);
         s++;
-        if (s % 4 == 0) iPoint++;
-        if (iVar == 3) iVar = 0; else iVar++;
+        if (s % nVar == 0) iPoint++;
+        if (iVar == nVar-1) iVar = 0; else iVar++;
       }
     }
     
