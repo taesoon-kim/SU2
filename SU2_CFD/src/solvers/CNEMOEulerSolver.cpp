@@ -218,6 +218,18 @@ CNEMOEulerSolver::CNEMOEulerSolver(CGeometry *geometry, CConfig *config,
 
   node_infty->SetPrimVar(0, FluidModel);
 
+  /*--- Enforce freestream Mach ---*/
+  for (iPoint = 0; iPoint < nPoint; iPoint++) {
+    nonPhys = nodes->SetPrimVar_Compressible(iPoint, config);
+    for (unsigned short iDim = 0; iDim < nDim; iDim++) nodes->SetPrimitive(iPoint, nSpecies+2+iDim, Mvec_Inf[iDim]*node_infty->GetSoundSpeed(0));
+
+    FluidModel->CalcdPdU(   nodes->GetPrimitive(iPoint), nodes->GetEve(iPoint), config, nodes->GetdPdU(iPoint)  );
+    FluidModel->CalcdTdU(   nodes->GetPrimitive(iPoint), config,                nodes->GetdTdU(iPoint)  );
+    FluidModel->CalcdTvedU( nodes->GetPrimitive(iPoint), nodes->GetEve(iPoint), config, nodes->GetdTvedU(iPoint));
+    nodes->Prim2ConsVar(    config, iPoint, nodes->GetPrimitive(iPoint), nodes->GetSolution(iPoint));
+    for (iVar = 0; iVar < nVar; iVar++) nodes->SetSolution_Old(iPoint, nodes->GetSolution(iPoint));
+  }
+
   /*--- Initial comms. ---*/
 
   CommunicateInitialState(geometry, config);
