@@ -436,6 +436,7 @@ private:
   bool AddIndNeighbor;         /*!< \brief Include indirect neighbor in the agglomeration process. */
   unsigned short nDV,                  /*!< \brief Number of design variables. */
   nObj, nObjW;                         /*! \brief Number of objective functions. */
+  unsigned long nDV_long;              /*! \brief Long int to store nDV for FIML case which has potentially large nDV (TKim) */  
   unsigned short* nDV_Value;           /*!< \brief Number of values for each design variable (might be different than 1 if we allow arbitrary movement). */
   unsigned short nFFDBox;              /*!< \brief Number of ffd boxes. */
   unsigned short nTurboMachineryKind;  /*!< \brief Number turbomachinery types specified. */
@@ -564,6 +565,9 @@ private:
   INLET_TYPE *Kind_Inc_Inlet;
   INC_OUTLET_TYPE *Kind_Inc_Outlet;
   WALL_TYPE *Kind_Wall;            /*!< \brief Type of wall treatment. */
+  Kind_SA_Fiml,                    /*!< (TKIM:FIML). */  
+  Kind_NN_Scaling,
+  Kind_Train_NN,
   unsigned short nWall_Types;      /*!< \brief Number of wall treatment types listed. */
   unsigned short nInc_Inlet;       /*!< \brief Number of inlet boundary treatment types listed. */
   unsigned short nInc_Outlet;      /*!< \brief Number of inlet boundary treatment types listed. */
@@ -633,6 +637,25 @@ private:
   su2double Total_CD;         /*!< \brief Specify a target CD instead of AoA (external flow only). */
   su2double dCL_dAlpha;       /*!< \brief value of dCl/dAlpha. */
   su2double dCM_diH;          /*!< \brief value of dCM/dHi. */
+  
+  su2double Target_Inverse_CL; /*!< \brief value of target CL for inverse design problems (not fixed CL mode!!) - TKim 10112017 */
+  su2double Target_Inverse_CD; /*!< \brief value of target CD for inverse design problems - TKim 10112017 */
+  su2double Lambda_FIML; /*!< \brief value of weight factor for FIML problems, penalizes designs far from baseline - TKim 10112017 */
+  su2double Lambda_Grid_FIML;
+  su2double Lambda_Loss_FIML;
+  bool salsa; //TKim 03012019
+  bool Cp_avg; //TKim 03132019
+  bool l2_reg; //TKim 08022019
+  bool multi_mesh;
+  unsigned short config_num;
+  su2double Percent_Holdout;
+  su2double Learning_Rate; //TKim 04172018 - Variables for NN training
+  unsigned short nBins;
+  unsigned short N_Hidden_Layers;
+  unsigned long N_Neurons, Iter_Start_NN, Num_Epoch, Iter_Stop_NN_Scaling;
+  bool Train_NN;
+  bool Filter_Shield;
+  
   unsigned long Iter_Fixed_CM;          /*!< \brief Iterations to re-evaluate the angle of attack (external flow only). */
   unsigned long Iter_Fixed_NetThrust;   /*!< \brief Iterations to re-evaluate the angle of attack (external flow only). */
   unsigned long Iter_dCL_dAlpha;        /*!< \brief Number of iterations to evaluate dCL_dAlpha. */
@@ -1350,6 +1373,24 @@ public:
    */
   static unsigned short GetnZone(string val_mesh_filename, unsigned short val_format);
 
+    /*!
+   * \brief Gets the number of elements (volumes) in the mesh file.
+   * \param[in] val_mesh_filename - Name of the file with the grid information.
+   * \param[in] val_format - Format of the file with the grid information.
+   * \param[in] config - Definition of the particular problem.
+   * \return Total number of zones in the grid file.
+   */
+  static unsigned short GetnElem(string val_mesh_filename, unsigned short val_format);
+
+  /*!
+   * \brief Gets the number of elements (volumes) in the mesh file.
+   * \param[in] val_mesh_filename - Name of the file with the grid information.
+   * \param[in] val_format - Format of the file with the grid information.
+   * \param[in] config - Definition of the particular problem.
+   * \return Total number of zones in the grid file.
+   */
+  static unsigned long GetnPoin(string val_mesh_filename, unsigned short val_format);
+    
   /*!
    * \brief Gets the number of dimensions in the mesh file
    * \param[in] val_mesh_filename - Name of the file with the grid information.
@@ -2728,13 +2769,13 @@ public:
    * \brief Get the number of design variables.
    * \return Number of the design variables.
    */
-  unsigned short GetnDV(void) const { return nDV; }
+  unsigned long GetnDV(void) const { return nDV; }
 
   /*!
    * \brief Get the number of design variables.
    * \return Number of the design variables.
    */
-  unsigned short GetnDV_Value(unsigned short iDV) const { return nDV_Value[iDV]; }
+  unsigned short GetnDV_Value(unsigned long iDV) const { return nDV_Value[iDV]; }
 
   /*!
    * \brief Get the number of FFD boxes.
@@ -4185,6 +4226,14 @@ public:
    */
   TURB_MODEL GetKind_Turb_Model(void) const { return Kind_Turb_Model; }
 
+  bool GetSALSA(void);
+  bool GetL2Reg(void);
+  bool GetCp_avg(void);
+  bool GetMultiMesh(void);
+  unsigned short GetConfigNum(void);
+  unsigned short GetKind_SA_Fiml(void);
+  unsigned short GetKind_NN_Scaling(void); //JRH 05102018
+  
   /*!
    * \brief Get the kind of the transition model.
    * \return Kind of the transion model.
@@ -5115,6 +5164,19 @@ public:
   unsigned short GetnZone(void) const { return nZone; }
 
   /*!
+   * \brief Provides the number of elements.
+   * \return Number of variables.
+   */
+  unsigned short GetnElem(void) const { return nElem; }
+
+  /*!
+   * \brief Provides the number of points.
+   * \return Number of variables.
+   */
+  unsigned short GetnPoin(void) const { return nPoin; }
+
+  
+  /*!
    * \brief Provides the number of varaibles.
    * \return Number of variables.
    */
@@ -5464,15 +5526,15 @@ public:
    * \param[in] val_val - Value of the design variable that we want to read.
    * \return Design variable step.
    */
-  su2double& GetDV_Value(unsigned short val_dv, unsigned short val_val = 0) { return DV_Value[val_dv][val_val]; }
-  const su2double& GetDV_Value(unsigned short val_dv, unsigned short val_val = 0) const { return DV_Value[val_dv][val_val]; }
+  su2double& GetDV_Value(unsigned long val_dv, unsigned short val_val = 0) { return DV_Value[val_dv][val_val]; }
+  const su2double& GetDV_Value(unsigned long val_dv, unsigned short val_val = 0) const { return DV_Value[val_dv][val_val]; }
 
   /*!
    * \brief Set the value of the design variable step, we use this value in design problems.
    * \param[in] val_dv - Number of the design variable that we want to read.
    * \param[in] val    - Value of the design variable.
    */
-  void SetDV_Value(unsigned short val_dv, unsigned short val_ind, su2double val) { DV_Value[val_dv][val_ind] = val; }
+  void SetDV_Value(unsigned long val_dv, unsigned short val_ind, su2double val) { DV_Value[val_dv][val_ind] = val; }
 
   /*!
    * \brief Get information about the grid movement.
@@ -5876,7 +5938,7 @@ public:
    * \param[in] val_dv - Number of the design variable that we want to read.
    * \return Design variable identification.
    */
-  unsigned short GetDesign_Variable(unsigned short val_dv) const { return Design_Variable[val_dv]; }
+  unsigned short GetDesign_Variable(unsigned long val_dv) const { return Design_Variable[val_dv]; }
 
   /*!
    * \brief Get the buffet sensor sharpness coefficient.
@@ -8188,6 +8250,37 @@ public:
    */
   su2double GetTarget_CL(void) const { return Target_CL; }
 
+    /*!
+   * \brief Get the value specified for the target CL for Inverse design problems.
+   * \return Value of the target CL.
+   */
+  su2double GetTarget_InverseCL(void) const { return Target_InverseCL; }
+
+  /*!
+   * \brief Get the value specified for the target CD for Inverse design problems.
+   * \return Value of the target CD.
+   */
+  su2double GetTarget_InverseCD(void) const { return Target_InverseCD; }
+
+  /*!
+   * \brief Get the value specified for the lambda FIML weight factor.
+   * \return Value of the target CL.
+   */
+  su2double GetLambdaFiml(void) const { return LambdaFiml; }
+  su2double GetLambdaGridFiml(void) const { return LambdaGridFiml; }
+  su2double GetLambdaLossFiml(void) const { return LambdaLossFiml; }
+  su2double GetPercentHoldout(void) const { return PercentHoldout; }
+  bool GetTrainNN(void) const { return TrainNN; }
+  bool GetFilterShield(void) const { return FilterShield; }
+  unsigned short GetKindTrainNN(void) const { return KindTrainNN; }
+  unsigned short GetNHiddenLayers(void) const { return NHiddenLayers; }
+  unsigned short GetnBins(void) const { return nBins; }
+  unsigned long GetNNeurons(void) const { return NNeurons; }
+  unsigned long GetIterStartNN(void) const { return IterStartNN; }
+  unsigned long GetIterStopNNScaling(void) const { return IterStopNNScaling; } //07162018
+  unsigned long GetNumEpoch(void) const { return NumEpoch; }
+  su2double GetLearningRate(void) const { return LearningRate; }
+  
   /*!
    * \brief Get the value for the lift curve slope for fixed CL mode.
    * \return Lift curve slope for fixed CL mode.
